@@ -80,7 +80,6 @@ class SpxScraper(private val context: Context) {
                     }
                     handler.postDelayed(runnable, 2000)
 
-                    // Timeout final (30s)
                     handler.postDelayed({
                         if (!hasResumed) {
                             Log.e("SPX", "timeout")

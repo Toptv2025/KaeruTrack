@@ -10,16 +10,16 @@ data class CorreiosObject(
     @SerializedName("eventos") val events: List<RapidApiEvent>?
 )
 data class RapidApiEvent(
-    @SerializedName("descricao") val description: String?, // "Objeto em transferência..."
-    @SerializedName("dtHrCriado") val createdAt: CreatedAt?, // Objeto de Data
-    @SerializedName("unidade") val unit: UnitObject?,       // Onde está
-    @SerializedName("unidadeDestino") val destination: UnitObject? // Para onde vai
+    @SerializedName("descricao") val description: String?,
+    @SerializedName("dtHrCriado") val createdAt: CreatedAt?,
+    @SerializedName("unidade") val unit: UnitObject?,
+    @SerializedName("unidadeDestino") val destination: UnitObject?
 )
 data class CreatedAt(
-    @SerializedName("date") val dateIso: String? // "2025-12-15 16:22:19.000000"
+    @SerializedName("date") val dateIso: String?
 )
 data class UnitObject(
-    @SerializedName("tipo") val type: String?, // "Agência dos Correios"
+    @SerializedName("tipo") val type: String?,
     @SerializedName("endereco") val address: AddressObject?
 )
 data class AddressObject(

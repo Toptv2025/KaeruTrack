@@ -120,7 +120,7 @@ fun SettingsScreen(
             }
 
             Material3SettingsGroup(
-                title = stringResource(R.string.app_language), // Se não tiver a string, use "Idioma"
+                title = stringResource(R.string.app_language),
                 items = listOf(
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                         Material3SettingsItem(

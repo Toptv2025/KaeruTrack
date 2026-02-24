@@ -66,7 +66,6 @@ fun <T> EnumDialog(
     ListDialog(
         onDismiss = onDismiss,
     ) {
-        // Título customizado opcional (já que tiramos o AlertDialog nativo)
         item {
             Text(
                 text = title,

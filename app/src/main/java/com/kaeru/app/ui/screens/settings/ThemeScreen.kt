@@ -265,10 +265,10 @@ fun ThemeControls(
                 ) {
                     ModeCircle(
                         isSelected = themeMode == KaeruThemeMode.SYSTEM,
-                        isPureBlack = isAmoled, // Passa estado real
+                        isPureBlack = isAmoled,
                         targetMode = KaeruThemeMode.SYSTEM,
                         targetPureBlack = isAmoled,
-                        showIcon = true, // Ícone de sync original
+                        showIcon = true,
                         onClick = { onThemeModeChange(KaeruThemeMode.SYSTEM) }
                     )
                     Box(

@@ -7,7 +7,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CheckCircle // Import necessário
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -28,31 +28,27 @@ fun HistoryScreen(
     viewModel: TrackingViewModel,
     onNavigateToResult: (String) -> Unit
 ) {
-    // Coleta a lista do banco de dados (Flow)
     val history by viewModel.historyList.collectAsState()
 
-    // Cores Dinâmicas do Material 3
     val backgroundColor = MaterialTheme.colorScheme.background
     val primaryColor = MaterialTheme.colorScheme.primary
     val onBackground = MaterialTheme.colorScheme.onBackground
 
-    // MUDANÇA 1: LazyColumn agora controla a tela toda para o Header scrollar junto
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
             .background(backgroundColor)
             .padding(horizontal = 16.dp),
-        contentPadding = PaddingValues(bottom = 80.dp), // Espaço para navbar
+        contentPadding = PaddingValues(bottom = 80.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        // --- CABEÇALHO (Como o primeiro item da lista) ---
         item {
             Column {
                 Spacer(modifier = Modifier.height(24.dp))
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(bottom = 8.dp), // Ajustei o padding visualmente
+                        .padding(bottom = 8.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -63,7 +59,6 @@ fun HistoryScreen(
                         fontWeight = FontWeight.Bold
                     )
 
-                    // Badge com a quantidade
                     if (history.isNotEmpty()) {
                         Surface(
                             color = primaryColor,
@@ -89,13 +84,12 @@ fun HistoryScreen(
             }
         }
 
-        // --- LISTA VAZIA ---
         if (history.isEmpty()) {
             item {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(300.dp), // Altura fixa para centralizar visualmente
+                        .height(300.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
@@ -105,7 +99,6 @@ fun HistoryScreen(
                 }
             }
         } else {
-            // --- ITENS DA LISTA ---
             items(history) { item ->
                 HistoryCardNew(
                     item = item,
@@ -199,7 +192,7 @@ fun HistoryCardNew(
 
             Surface(
                 color = primaryColor.copy(alpha = 0.15f),
-                shape = RoundedCornerShape(bottomStart = 16.dp), // Canto arredondado apenas na parte inferior esquerda
+                shape = RoundedCornerShape(bottomStart = 16.dp),
                 modifier = Modifier.align(Alignment.TopEnd)
             ) {
                 Row(

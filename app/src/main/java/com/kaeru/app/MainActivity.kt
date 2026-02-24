@@ -100,56 +100,12 @@ class MainActivity : ComponentActivity() {
                 ) {
                     KaeruNavGraph(viewModel = trackingViewModel)
                 }
-
-                val context = LocalContext.current
-                var showUpdateDialog by remember { mutableStateOf(false) }
-                var updateRelease by remember { mutableStateOf<GithubRelease?>(null) }
-                val updateManager = remember { UpdateManager() }
-                val viewModel: TrackingViewModel = viewModel()
-                val checkUpdatesEnabled by viewModel.checkUpdatesOnStart.collectAsState()
-
-                // Checa atualização ao abrir o app
-                LaunchedEffect(Unit) {
-                    val release = updateManager.checkForUpdate()
-                    if (checkUpdatesEnabled) {
-                        if (release != null) {
-                            viewModel.setUpdateRelease(release)
-                            updateRelease = release
-                        }
-                    }
-                }
-
-                if (showUpdateDialog && updateRelease != null) {
-                    AlertDialog(
-                        onDismissRequest = {showUpdateDialog = false},
-                        icon = { Icon(Icons.Outlined.Download, contentDescription = null) },
-                        title = { Text(stringResource(R.string.update_available)) },
-                        text = { Text(
-                            stringResource(
-                                R.string.update_available_description,
-                                updateRelease?.tagName ?: stringResource(R.string.unknown)
-                            )) },
-                        confirmButton = {
-                            Button(onClick = {
-                                updateManager.openDownloadPage(context, updateRelease!!.htmlUrl)
-                                showUpdateDialog = false
-                            }) {
-                                Text(stringResource(R.string.download))
-                            }
-                        },
-                        dismissButton = {
-                            TextButton(onClick = {showUpdateDialog = false}) {
-                                Text(stringResource(R.string.not_now))
-                            }
-                        }
-                    )
-                }
             }
         }
     }
 }
 
-// ROTAS DO APP
+// rotas
 object Routes {
     const val HOME = "home_screen"
     const val RESULT = "result_screen/{code}"
@@ -280,7 +236,7 @@ fun KaeruTabsScreen(
 
     LaunchedEffect(Unit) {
         updateRelease = updateManager.checkForUpdate()
-    }
+    } //checagem de att ao abrir (essencial pra badge e changelogs)
 
     Scaffold(
         bottomBar = {
@@ -291,17 +247,17 @@ fun KaeruTabsScreen(
                         onClick = { currentTab = destination },
                         label = { Text(stringResource(destination.label)) },
                         icon = {
-                                BadgedBox(
-                                    badge = {
-                                        if (checkUpdatesEnabled) {
-                                            if (destination == AppDestinations.PROFILE && updateRelease != null) {
-                                                Badge(containerColor = MaterialTheme.colorScheme.error)
-                                            }
+                            BadgedBox(
+                                badge = {
+                                    if (checkUpdatesEnabled) {
+                                        if (destination == AppDestinations.PROFILE && updateRelease != null) {
+                                            Badge(containerColor = MaterialTheme.colorScheme.error)
                                         }
                                     }
-                                ) {
-                                    Icon(destination.icon, contentDescription = null)
                                 }
+                            ) {
+                                Icon(destination.icon, contentDescription = null)
+                            }
                         }
                     )
                 }
@@ -352,7 +308,6 @@ fun KaeruTabsScreen(
     }
 }
 
-// Enum para ordem das abas
 enum class AppDestinations(
     val label: Int,
     val icon: ImageVector,
