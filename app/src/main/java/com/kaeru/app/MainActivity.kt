@@ -1,0 +1,363 @@
+package com.kaeru.app
+
+import android.content.Context
+import android.os.Bundle
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
+import androidx.compose.animation.*
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.background
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.layout.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Download
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.outlined.History
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavType
+import androidx.navigation.compose.*
+import androidx.navigation.navArgument
+import com.kaeru.app.data.utils.GithubRelease
+import com.kaeru.app.data.utils.UpdateManager
+import com.kaeru.app.tracking.TrackingRepository
+import com.kaeru.app.tracking.TrackingViewModel
+import com.kaeru.app.tracking.database.AppDatabase
+import com.kaeru.app.ui.screens.*
+import com.kaeru.app.ui.screens.settings.*
+import com.kaeru.app.ui.theme.KaeruTrackTheme
+
+class MainActivity : ComponentActivity() {
+    override fun attachBaseContext(newBase: Context) {
+        val userPrefs = com.kaeru.app.data.UserPreferences(newBase)
+        val savedLang = userPrefs.getLanguage()
+
+        if (savedLang != "system") {
+            val locale = java.util.Locale.forLanguageTag(savedLang)
+            java.util.Locale.setDefault(locale)
+
+            val config = android.content.res.Configuration(newBase.resources.configuration)
+            config.setLocale(locale)
+
+            val context = newBase.createConfigurationContext(config)
+            super.attachBaseContext(context)
+        } else {
+            super.attachBaseContext(newBase)
+        }
+    }
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        enableEdgeToEdge()
+
+        val db = AppDatabase.getDatabase(applicationContext)
+        val dao = db.trackingDao()
+        val repository = TrackingRepository(applicationContext)
+        val viewModelFactory = object : ViewModelProvider.Factory {
+            override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                if (modelClass.isAssignableFrom(TrackingViewModel::class.java)) {
+                    @Suppress("UNCHECKED_CAST")
+                    return TrackingViewModel(
+                        application = application,
+                        repository = repository,
+                        dao = dao
+                    ) as T
+                }
+                throw IllegalArgumentException("Unknown ViewModel class")
+            }
+        }
+        val trackingViewModel = ViewModelProvider(this, viewModelFactory)[TrackingViewModel::class.java]
+
+        setContent {
+            val themeMode by trackingViewModel.themeMode.collectAsState()
+            val isAmoled by trackingViewModel.isAmoled.collectAsState()
+            val themeColorInt by trackingViewModel.currentThemeColor.collectAsState()
+            val useDarkTheme = when (themeMode) {
+                KaeruThemeMode.LIGHT -> false
+                KaeruThemeMode.DARK -> true
+                KaeruThemeMode.SYSTEM -> isSystemInDarkTheme()
+            }
+
+            KaeruTrackTheme(
+                darkTheme = useDarkTheme,
+                pureBlack = isAmoled,
+                seedColor = Color(themeColorInt)
+            ) {
+                Surface(
+                    modifier = Modifier.fillMaxSize(),
+                    color = MaterialTheme.colorScheme.background
+                ) {
+                    KaeruNavGraph(viewModel = trackingViewModel)
+                }
+
+                val context = LocalContext.current
+                var showUpdateDialog by remember { mutableStateOf(false) }
+                var updateRelease by remember { mutableStateOf<GithubRelease?>(null) }
+                val updateManager = remember { UpdateManager() }
+                val viewModel: TrackingViewModel = viewModel()
+                val checkUpdatesEnabled by viewModel.checkUpdatesOnStart.collectAsState()
+
+                // Checa atualização ao abrir o app
+                LaunchedEffect(Unit) {
+                    val release = updateManager.checkForUpdate()
+                    if (checkUpdatesEnabled) {
+                        if (release != null) {
+                            viewModel.setUpdateRelease(release)
+                            updateRelease = release
+                        }
+                    }
+                }
+
+                if (showUpdateDialog && updateRelease != null) {
+                    AlertDialog(
+                        onDismissRequest = {showUpdateDialog = false},
+                        icon = { Icon(Icons.Outlined.Download, contentDescription = null) },
+                        title = { Text(stringResource(R.string.update_available)) },
+                        text = { Text(
+                            stringResource(
+                                R.string.update_available_description,
+                                updateRelease?.tagName ?: stringResource(R.string.unknown)
+                            )) },
+                        confirmButton = {
+                            Button(onClick = {
+                                updateManager.openDownloadPage(context, updateRelease!!.htmlUrl)
+                                showUpdateDialog = false
+                            }) {
+                                Text(stringResource(R.string.download))
+                            }
+                        },
+                        dismissButton = {
+                            TextButton(onClick = {showUpdateDialog = false}) {
+                                Text(stringResource(R.string.not_now))
+                            }
+                        }
+                    )
+                }
+            }
+        }
+    }
+}
+
+// ROTAS DO APP
+object Routes {
+    const val HOME = "home_screen"
+    const val RESULT = "result_screen/{code}"
+    const val SETTINGS = "settings_screen"
+    const val APPEARANCE = "appearance_screen"
+    const val THEME = "theme_screen"
+    const val BACKUP = "backup_screen"
+    const val UPDATE = "update_screen"
+    const val ABOUT = "about_screen"
+}
+
+@Composable
+fun KaeruNavGraph(viewModel: TrackingViewModel) {
+    val navController = rememberNavController()
+
+    NavHost(
+        navController = navController,
+        startDestination = Routes.HOME,
+        enterTransition = {
+            slideInHorizontally(initialOffsetX = { it }, animationSpec = tween(500))
+        },
+        exitTransition = {
+            slideOutHorizontally(targetOffsetX = { -it / 3 }, animationSpec = tween(500))
+        },
+        popEnterTransition = {
+            slideInHorizontally(initialOffsetX = { -it / 3 }, animationSpec = tween(500))
+        },
+        popExitTransition = {
+            slideOutHorizontally(targetOffsetX = { it }, animationSpec = tween(500))
+        }
+    ) {
+        composable(route = Routes.HOME) {
+            KaeruTabsScreen(
+                viewModel = viewModel,
+                onNavigateToResult = { code ->
+                    navController.navigate("result_screen/$code")
+                },
+                onNavigateToSettings = {
+                    navController.navigate(Routes.SETTINGS)
+                }
+            )
+        }
+
+        composable(route = Routes.SETTINGS) {
+            SettingsScreen(
+                viewModel = viewModel,
+                onBack = { navController.popBackStack() },
+                onAppearanceClick = {
+                    navController.navigate(Routes.THEME)
+                },
+                onBackupClick = {
+                    navController.navigate(Routes.BACKUP)
+                },
+                onUpdaterClick = {
+                    navController.navigate(Routes.UPDATE)
+                },
+                onAboutClick = {
+                    navController.navigate(Routes.ABOUT)
+                }
+            )
+        }
+
+        composable(route = Routes.APPEARANCE) {
+            AppearanceScreen(
+                viewModel = viewModel,
+                onBack = { navController.popBackStack() },
+                onEditColorsClick = {
+                    navController.navigate(Routes.THEME)
+                }
+            )
+        }
+
+        composable(route = Routes.THEME) {
+            ThemeScreen(
+                viewModel = viewModel,
+                onBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(
+            route = Routes.RESULT,
+            arguments = listOf(navArgument("code") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val code = backStackEntry.arguments?.getString("code") ?: ""
+
+            ResultScreen(
+                trackingCode = code,
+                viewModel = viewModel,
+                onBack = {
+                    navController.popBackStack()
+                }
+            )
+        }
+
+        composable(route = Routes.BACKUP) {
+            BackupAndRestore(
+                viewModel = viewModel,
+                onBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(route = Routes.UPDATE) {
+            UpdaterScreen(
+                viewModel = viewModel,
+                onBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(route = Routes.ABOUT) {
+            AboutScreen(
+                viewModel = viewModel,
+                onBack = { navController.popBackStack() }
+            )
+        }
+    }
+}
+
+@Composable
+fun KaeruTabsScreen(
+    viewModel: TrackingViewModel,
+    onNavigateToResult: (String) -> Unit,
+    onNavigateToSettings: () -> Unit
+) {
+    var currentTab by rememberSaveable { mutableStateOf(AppDestinations.SEARCH) }
+    var updateRelease by remember { mutableStateOf<GithubRelease?>(null) }
+    val updateManager = remember { UpdateManager() }
+    val checkUpdatesEnabled by viewModel.checkUpdatesOnStart.collectAsState()
+
+    LaunchedEffect(Unit) {
+        updateRelease = updateManager.checkForUpdate()
+    }
+
+    Scaffold(
+        bottomBar = {
+            NavigationBar {
+                AppDestinations.entries.forEach { destination ->
+                    NavigationBarItem(
+                        selected = destination == currentTab,
+                        onClick = { currentTab = destination },
+                        label = { Text(stringResource(destination.label)) },
+                        icon = {
+                                BadgedBox(
+                                    badge = {
+                                        if (checkUpdatesEnabled) {
+                                            if (destination == AppDestinations.PROFILE && updateRelease != null) {
+                                                Badge(containerColor = MaterialTheme.colorScheme.error)
+                                            }
+                                        }
+                                    }
+                                ) {
+                                    Icon(destination.icon, contentDescription = null)
+                                }
+                        }
+                    )
+                }
+            }
+        }
+    ) { innerPadding ->
+        Box(
+            modifier = Modifier
+                .padding(innerPadding)
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.background)
+        ) {
+            AnimatedContent(
+                targetState = currentTab,
+                transitionSpec = {
+                    val duration = 400
+                    if (targetState.ordinal > initialState.ordinal) {
+                        slideInHorizontally(animationSpec = tween(duration)) { it } + fadeIn(tween(duration)) togetherWith
+                                slideOutHorizontally(animationSpec = tween(duration)) { -it } + fadeOut(tween(duration))
+                    } else {
+                        slideInHorizontally(animationSpec = tween(duration)) { -it } + fadeIn(tween(duration)) togetherWith
+                                slideOutHorizontally(animationSpec = tween(duration)) { it } + fadeOut(tween(duration))
+                    }
+                },
+                label = "TabTransition"
+            ) { targetTab ->
+                when (targetTab) {
+                    AppDestinations.HISTORY -> {
+                        HistoryScreen(
+                            viewModel = viewModel,
+                            onNavigateToResult = onNavigateToResult
+                        )
+                    }
+                    AppDestinations.SEARCH -> {
+                        SearchScreen(
+                            onNavigateToResult = onNavigateToResult
+                        )
+                    }
+                    AppDestinations.PROFILE -> {
+                        ProfileScreen(
+                            viewModel = viewModel,
+                            onSettingsClick = onNavigateToSettings,
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+// Enum para ordem das abas
+enum class AppDestinations(
+    val label: Int,
+    val icon: ImageVector,
+) {
+    HISTORY(R.string.home_history, Icons.Outlined.History),
+    SEARCH(R.string.home_search, Icons.Default.Search),
+    PROFILE(R.string.home_profile, Icons.Default.Person),
+}
