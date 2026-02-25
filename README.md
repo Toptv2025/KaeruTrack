@@ -24,10 +24,7 @@ O **KaeruTrack** é um projeto de código aberto desenvolvido de forma independe
 <table>
 <tr>
 <td align="center">
-<a href="https://github.com/kkyago/KaeruTrack/releases/latest/download/Kitty.apk"><img src="https://github.com/machiav3lli/oandbackupx/blob/034b226cea5c1b30eb4f6a6f313e4dadcbb0ece4/badge_github.png" alt="Get it on GitHub" height="82"></a><br/>
-</td>
-<td align="center">
-<a href="https://github.com/kkyago/KaeruTrack/releases/latest/download/Kitty.apk"><img src="https://f-droid.org/badge/get-it-on.png" alt="Get it on GitHub" height="82"></a>
+<a href="https://github.com/kkyago/KaeruTrack/releases/latest/download/KaeruTrack.apk"><img src="https://github.com/machiav3lli/oandbackupx/blob/034b226cea5c1b30eb4f6a6f313e4dadcbb0ece4/badge_github.png" alt="Get it on GitHub" height="82"></a><br/>
 </td>
 </tr>
 </table>
