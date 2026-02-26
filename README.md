@@ -1,5 +1,5 @@
 <div align="center">
-<img src="fastlane/metadata/android/images/icon.png" width="160" height="160" style="display: block; margin: 0 auto"/>
+<img src="fastlane/metadata/android/en-US/images/icon.png" width="160" height="160" style="display: block; margin: 0 auto"/>
 <h1>Kaeru Tracker</h1>
 <p>Um rastreador de encomendas para android com tema Material You</p>
 
@@ -13,9 +13,9 @@ O **KaeruTrack** é um projeto de código aberto desenvolvido de forma independe
 4. **Fins Educativos:** O projeto foi desenvolvido com o objetivo de facilitar a experiência do usuário e para fins de aprendizado em desenvolvimento Android.
 
 <h1>Capturas de tela</h1>
-<img src="fastlane/metadata/android/images/screenshots/screenshot_1.jpg" width="30%" />
-<img src="fastlane/metadata/android/images/screenshots/screenshot_2.jpg" width="30%" />
-<img src="fastlane/metadata/android/images/screenshots/screenshot_3.jpg" width="30%" />
+<img src="fastlane/metadata/android/en-US/images/screenshots/screenshot_1.jpg" width="30%" />
+<img src="fastlane/metadata/android/en-US/images/screenshots/screenshot_2.jpg" width="30%" />
+<img src="fastlane/metadata/android/en-US/images/screenshots/screenshot_3.jpg" width="30%" />
 </div>
 
 <div align="center">
