@@ -1,0 +1,9 @@
+Um rastreador de pacotes leve e de código aberto para Android
+
+Recursos:
+
+- Rastreia encomendas de várias transportadoras diferentes
+- Sem Anúncios
+- Material 3
+- Customização profunda
+- etc.

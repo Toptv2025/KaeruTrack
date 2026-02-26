@@ -1,0 +1,9 @@
+A lightweight, open-source package tracker for Android
+
+Features:
+
+- Tracks orders from several different carriers
+- No Ads
+- Material 3
+- Deep customization
+- etc.
