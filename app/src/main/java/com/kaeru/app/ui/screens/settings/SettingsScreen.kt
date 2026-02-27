@@ -21,7 +21,6 @@ import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
-import com.kaeru.app.BuildConfig
 import com.kaeru.app.R
 import com.kaeru.app.ui.components.Material3SettingsGroup
 import com.kaeru.app.ui.components.Material3SettingsItem
@@ -34,6 +33,9 @@ import com.kaeru.app.tracking.TrackingViewModel
 import com.kaeru.app.ui.components.EnumDialog
 import com.kaeru.app.ui.components.ReleaseNotesCard
 import android.provider.Settings
+import androidx.compose.runtime.setValue
+import com.kaeru.app.data.utils.GithubRelease
+import com.kaeru.app.data.utils.UpdateManager
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -43,10 +45,10 @@ fun SettingsScreen(
     onAppearanceClick: () -> Unit = {},
     onBackupClick: () -> Unit = {},
     onUpdaterClick: () -> Unit = {},
-    onAboutClick: () -> Unit = {}
+    onAboutClick: () -> Unit = {},
+    updateRelease: GithubRelease?
 ) {
     val uriHandler = LocalUriHandler.current
-    val updateRelease by viewModel.updateRelease.collectAsState()
     val checkUpdatesEnabled by viewModel.checkUpdatesOnStart.collectAsState()
     val context = LocalContext.current
     val activity = context as? Activity
@@ -168,7 +170,7 @@ fun SettingsScreen(
                         )
                     )
                     updateRelease?.let { release ->
-                        if (release.tagName != BuildConfig.VERSION_NAME) {
+                        if (checkUpdatesEnabled && updateRelease != null) {
                             if (checkUpdatesEnabled) {
                                 add(
                                     Material3SettingsItem(
@@ -195,13 +197,11 @@ fun SettingsScreen(
                 }
             )
             updateRelease?.let { release ->
-                if (release.tagName != BuildConfig.VERSION_NAME) {
                     if (checkUpdatesEnabled) {
                         Spacer(modifier = Modifier.height(16.dp))
                         ReleaseNotesCard(release = release)
                     }
                     Spacer(modifier = Modifier.height(16.dp))
-                }
             }
         }
     }

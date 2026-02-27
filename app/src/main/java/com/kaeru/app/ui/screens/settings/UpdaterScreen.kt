@@ -9,6 +9,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -28,6 +29,7 @@ import kotlinx.coroutines.withContext
 @Composable
 fun UpdaterScreen(
     viewModel: TrackingViewModel,
+    updateRelease: GithubRelease?,
     onBack: () -> Unit
 ) {
     val checkOnStartEnabled by viewModel.checkUpdatesOnStart.collectAsState()
@@ -38,6 +40,7 @@ fun UpdaterScreen(
     var showChangelog by remember { mutableStateOf(false) }
     var changelogContent by remember { mutableStateOf<String?>(null) }
     var checkError by remember { mutableStateOf<String?>(null) }
+    val uriHandler = LocalUriHandler.current
 
     val coroutineScope = rememberCoroutineScope()
 
@@ -158,11 +161,21 @@ fun UpdaterScreen(
                             if (isChecking) {
                                 CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
                             } else if (updateAvailable) {
-                                Icon(
-                                    painter = painterResource(R.drawable.ic_download),
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.primary
-                                )
+                                IconButton(
+                                    onClick = {
+                                        if (updateAvailable && updateRelease != null) {
+                                            uriHandler.openUri(updateRelease.htmlUrl)
+                                        } else if (!isChecking) {
+                                            performManualCheck()
+                                        }
+                                    }
+                                ) {
+                                    Icon(
+                                        painter = painterResource(R.drawable.ic_download),
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.primary
+                                    )
+                                }
                             }
                         },
                         onClick = { if (!isChecking) performManualCheck() }
