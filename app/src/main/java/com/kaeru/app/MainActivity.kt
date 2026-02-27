@@ -11,7 +11,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Download
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.outlined.History
@@ -21,7 +20,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
@@ -88,6 +86,18 @@ class MainActivity : ComponentActivity() {
                 KaeruThemeMode.DARK -> true
                 KaeruThemeMode.SYSTEM -> isSystemInDarkTheme()
             }
+            val trackingViewModel: TrackingViewModel = viewModel()
+            var updateRelease by remember { mutableStateOf<GithubRelease?>(null) }
+            val updateManager = remember { UpdateManager() }
+            val checkUpdatesEnabled by trackingViewModel.checkUpdatesOnStart.collectAsState()
+
+            LaunchedEffect(Unit) {
+                if (checkUpdatesEnabled) {
+                    updateRelease = updateManager.checkForUpdate()
+                } else {
+                    updateRelease = null
+                }
+            } //checagem de att ao abrir (essencial pra badge e changelogs)
 
             KaeruTrackTheme(
                 darkTheme = useDarkTheme,
@@ -98,7 +108,7 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    KaeruNavGraph(viewModel = trackingViewModel)
+                    KaeruNavGraph(viewModel = trackingViewModel, updateRelease = updateRelease,)
                 }
             }
         }
@@ -118,7 +128,7 @@ object Routes {
 }
 
 @Composable
-fun KaeruNavGraph(viewModel: TrackingViewModel) {
+fun KaeruNavGraph(viewModel: TrackingViewModel, updateRelease: GithubRelease?) {
     val navController = rememberNavController()
 
     NavHost(
@@ -140,6 +150,7 @@ fun KaeruNavGraph(viewModel: TrackingViewModel) {
         composable(route = Routes.HOME) {
             KaeruTabsScreen(
                 viewModel = viewModel,
+                updateRelease = updateRelease,
                 onNavigateToResult = { code ->
                     navController.navigate("result_screen/$code")
                 },
@@ -152,6 +163,7 @@ fun KaeruNavGraph(viewModel: TrackingViewModel) {
         composable(route = Routes.SETTINGS) {
             SettingsScreen(
                 viewModel = viewModel,
+                updateRelease = updateRelease,
                 onBack = { navController.popBackStack() },
                 onAppearanceClick = {
                     navController.navigate(Routes.THEME)
@@ -210,6 +222,7 @@ fun KaeruNavGraph(viewModel: TrackingViewModel) {
         composable(route = Routes.UPDATE) {
             UpdaterScreen(
                 viewModel = viewModel,
+                updateRelease = updateRelease,
                 onBack = { navController.popBackStack() }
             )
         }
@@ -226,17 +239,12 @@ fun KaeruNavGraph(viewModel: TrackingViewModel) {
 @Composable
 fun KaeruTabsScreen(
     viewModel: TrackingViewModel,
+    updateRelease: GithubRelease?,
     onNavigateToResult: (String) -> Unit,
     onNavigateToSettings: () -> Unit
 ) {
     var currentTab by rememberSaveable { mutableStateOf(AppDestinations.SEARCH) }
-    var updateRelease by remember { mutableStateOf<GithubRelease?>(null) }
-    val updateManager = remember { UpdateManager() }
     val checkUpdatesEnabled by viewModel.checkUpdatesOnStart.collectAsState()
-
-    LaunchedEffect(Unit) {
-        updateRelease = updateManager.checkForUpdate()
-    } //checagem de att ao abrir (essencial pra badge e changelogs)
 
     Scaffold(
         bottomBar = {
@@ -249,11 +257,9 @@ fun KaeruTabsScreen(
                         icon = {
                             BadgedBox(
                                 badge = {
-                                    if (checkUpdatesEnabled) {
-                                        if (destination == AppDestinations.PROFILE && updateRelease != null) {
+                                        if (destination == AppDestinations.PROFILE && updateRelease != null && checkUpdatesEnabled) {
                                             Badge(containerColor = MaterialTheme.colorScheme.error)
                                         }
-                                    }
                                 }
                             ) {
                                 Icon(destination.icon, contentDescription = null)
@@ -299,6 +305,7 @@ fun KaeruTabsScreen(
                     AppDestinations.PROFILE -> {
                         ProfileScreen(
                             viewModel = viewModel,
+                            updateRelease = updateRelease,
                             onSettingsClick = onNavigateToSettings,
                         )
                     }

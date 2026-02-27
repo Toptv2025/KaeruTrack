@@ -38,7 +38,8 @@ import com.kaeru.app.ui.components.Material3SettingsItem
 fun ProfileScreen(
     viewModel: TrackingViewModel,
     onSettingsClick: () -> Unit = {},
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    updateRelease: GithubRelease?
 ) {
     val name by viewModel.userName.collectAsState()
     val bio by viewModel.userBio.collectAsState()
@@ -51,13 +52,6 @@ fun ProfileScreen(
         uri?.let { viewModel.updateAvatar(it.toString()) }
     }
     val checkUpdatesEnabled by viewModel.checkUpdatesOnStart.collectAsState()
-    var updateRelease by remember { mutableStateOf<GithubRelease?>(null) }
-    val updateManager = remember { UpdateManager() }
-
-    LaunchedEffect(Unit) {
-        updateRelease = updateManager.checkForUpdate()
-    }
-
     if (showEditDialog) {
         EditProfileDialog(
             currentName = name,
