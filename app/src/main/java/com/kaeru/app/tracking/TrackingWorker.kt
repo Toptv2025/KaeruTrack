@@ -3,6 +3,8 @@ package com.kaeru.app.tracking
 import android.content.Context
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
+import com.kaeru.app.tracking.database.AppDatabase
+import kotlinx.coroutines.flow.first
 
 class TrackingWorker(
     appContext: Context,
@@ -12,39 +14,53 @@ class TrackingWorker(
     override suspend fun doWork(): Result {
         val notificationHelper = NotificationHelper(applicationContext)
 
-        // 1. VERIFICAÇÃO DO GATILHO FAKE
+        val database = AppDatabase.getDatabase(applicationContext)
+        val dao = database.trackingDao()
+
+        val repository = TrackingRepository(applicationContext)
+
         val isFakeTest = inputData.getBoolean("is_fake_test", false)
         if (isFakeTest) {
-            // Dispara notificação de teste imediatamente
             notificationHelper.showNotification(
-                trackingCode = "NL123456789BR",
-                newStatus = "Objeto saiu para entrega ao destinatário"
+                trackingCode = "TESTE-01",
+                newStatus = "Opa! O sistema de notificações está ativo! 🐸"
             )
             return Result.success()
         }
 
-        // 2. LÓGICA REAL (A Cada 1 Hora)
         try {
-            // Exemplo conceitual de como integrar com o seu banco local:
-            // val encomendasSalvas = repository.getAllTrackingCodes()
+            val encomendasSalvas = dao.getAllTracking().first()
 
-            // for (codigo in encomendasSalvas) {
-            //     val response: TrackingResponse = api.getTracking(codigo)
-            //     val eventoMaisRecente: TrackingEvent? = response.events?.firstOrNull()
-            //
-            //     val statusAntigo = repository.getLatestStatus(codigo)
-            //     val statusNovo = eventoMaisRecente?.status
-            //
-            //     if (statusNovo != null && statusNovo != statusAntigo) {
-            //         notificationHelper.showNotification(codigo, statusNovo)
-            //         repository.updateStatus(codigo, statusNovo) // Atualiza no banco
-            //     }
-            // }
+            for (encomenda in encomendasSalvas) {
+                val isAlreadyDelivered = encomenda.lastStatus.contains("Entregue", ignoreCase = true) ||
+                        encomenda.lastStatus.contains("Delivered", ignoreCase = true)
+                if (isAlreadyDelivered) continue
 
+                val response = repository.trackPackage(encomenda.code, forceRefresh = true)
+                val eventoMaisRecente = response?.events?.firstOrNull()
+                val statusNovo = eventoMaisRecente?.status
+
+                if (statusNovo != null && statusNovo != encomenda.lastStatus) {
+                    val nomeExibicao = if (encomenda.description.isNotBlank() && encomenda.description != "Encomenda Sem Nome") {
+                        encomenda.description
+                    } else {
+                        encomenda.code
+                    }
+
+                    notificationHelper.showNotification(nomeExibicao, statusNovo)
+
+                    val updatedItem = encomenda.copy(
+                        lastStatus = statusNovo,
+                        lastDate = "${eventoMaisRecente.date ?: ""} ${eventoMaisRecente.time ?: ""}".trim(),
+                        savedAt = System.currentTimeMillis()
+                    )
+                    dao.insertTracking(updatedItem)
+                }
+            }
             return Result.success()
         } catch (e: Exception) {
             e.printStackTrace()
-            return Result.retry() // Se a internet cair, o Android tenta de novo depois
+            return Result.retry()
         }
     }
 }

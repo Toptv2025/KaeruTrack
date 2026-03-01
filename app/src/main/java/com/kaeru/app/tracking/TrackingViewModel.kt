@@ -30,7 +30,13 @@ import java.io.BufferedReader
 import java.io.InputStreamReader
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.os.LocaleListCompat
+import androidx.work.Constraints
+import androidx.work.ExistingPeriodicWorkPolicy
+import androidx.work.NetworkType
+import androidx.work.PeriodicWorkRequestBuilder
+import androidx.work.WorkManager
 import com.kaeru.app.ui.screens.settings.SYSTEM_DEFAULT
+import java.util.concurrent.TimeUnit
 
 class TrackingViewModel(
     application: Application,
@@ -185,6 +191,27 @@ class TrackingViewModel(
         }
     }
 
+    fun scheduleTrackingWorker() {
+        val context = getApplication<Application>().applicationContext
+        val workManager = WorkManager.getInstance(context)
+
+        val constraints = Constraints.Builder()
+            .setRequiredNetworkType(NetworkType.CONNECTED)
+            .build()
+
+        val periodicRequest = PeriodicWorkRequestBuilder<TrackingWorker>(
+            1, TimeUnit.HOURS
+        )
+            .setConstraints(constraints)
+            .build()
+
+        workManager.enqueueUniquePeriodicWork(
+            "KaeruTrackingWorker",
+            ExistingPeriodicWorkPolicy.KEEP,
+            periodicRequest
+        )
+    }
+
     fun saveTracking() {
         val currentResult = trackingResult ?: return
         val currentCode = currentResult.tracking_code ?: return
@@ -198,6 +225,8 @@ class TrackingViewModel(
                 lastDate = lastEvent?.date ?: ""
             )
             dao.insertTracking(entity)
+
+            scheduleTrackingWorker()
 
             showSaveDialog = false
             packageDescription = ""
