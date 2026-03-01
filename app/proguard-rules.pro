@@ -37,3 +37,9 @@
 -keepclassmembers  interface * {
     @retrofit2.http.* <methods>;
 }
+-keep class androidx.work.** { *; }
+-keepclassmembernames class kotlinx.coroutines.** {
+    volatile <fields>;
+}
+-keep class * extends androidx.room.RoomDatabase
+-dontwarn androidx.room.paging.**
