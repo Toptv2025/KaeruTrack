@@ -30,7 +30,7 @@ class TrackingRepository(private val context: Context) {
             listOf("ME").any { cleanCode.startsWith(it) } && cleanCode.length >= 12 -> true
             listOf("AJ").any { cleanCode.startsWith(it) } && cleanCode.length >= 12 -> true
             listOf("BR", "SPX").any { cleanCode.startsWith(it) } && cleanCode.length >= 12 -> true
-            listOf("AD", "AB").any { cleanCode.startsWith(it) } && cleanCode.length >= 12 -> true
+            listOf("AD", "AB", "AN").any { cleanCode.startsWith(it) } && cleanCode.length >= 12 -> true
             else -> false
         }
     }
@@ -54,7 +54,7 @@ class TrackingRepository(private val context: Context) {
             listOf("ME").any { cleanCode.startsWith(it) } -> { trackMelhorRastreioFree(cleanCode) }
             listOf("AJ").any { cleanCode.startsWith(it) } -> { trackViaAnjun(cleanCode) }
             listOf("BR", "SPX").any { cleanCode.startsWith(it) } -> { trackViaSpxWebView(cleanCode) }
-            listOf("AD", "AB").any { cleanCode.startsWith(it) } -> { trackViaLinketrackWebView(cleanCode) }
+            listOf("AD", "AB", "AN").any { cleanCode.startsWith(it) } -> { trackViaLinketrackWebView(cleanCode) }
             else -> { null }
         }
 
