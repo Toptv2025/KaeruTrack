@@ -36,6 +36,7 @@ import androidx.compose.ui.unit.sp
 import com.kaeru.app.R
 import com.kaeru.app.tracking.TrackingEvent
 import com.kaeru.app.tracking.TrackingViewModel
+import com.kaeru.app.tracking.utils.DateUtils
 import com.kaeru.app.ui.components.KaeruLoading
 import java.text.SimpleDateFormat
 import java.util.Locale
@@ -298,17 +299,6 @@ fun ResultScreen(
     }
 }
 
-fun formatDatePretty(dateStr: String?, timeStr: String?): String {
-    if (dateStr.isNullOrBlank()) return ""
-    try {
-        val inputFormat = if (dateStr.contains("-")) SimpleDateFormat("dd-MM-yyyy", Locale("pt", "BR"))
-        else SimpleDateFormat("dd/MM/yyyy", Locale("pt", "BR"))
-        val dateObj = inputFormat.parse(dateStr.trim()) ?: return "$dateStr, $timeStr"
-        val outputFormat = SimpleDateFormat("dd 'de' MMM", Locale("pt", "BR"))
-        return "${outputFormat.format(dateObj)}, $timeStr"
-    } catch (e: Exception) { return "$dateStr, $timeStr" }
-}
-
 fun detectCarrier(code: String): Int {
     val clean = code.uppercase()
     return when {
@@ -472,7 +462,7 @@ fun LatestEventCard(event: TrackingEvent) {
                     Text(text = event.location, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 14.sp)
                 }
                 Spacer(modifier = Modifier.height(12.dp))
-                val prettyDate = formatDatePretty(event.date, event.time)
+                val prettyDate = DateUtils.formatDatePretty(event.date, event.time)
                 DateBadge(prettyDate, primaryColor)
             }
         }
@@ -503,7 +493,7 @@ fun HistoryEventItem(event: TrackingEvent) {
                 Text(text = event.location, color = textColor.copy(alpha = 0.7f), fontSize = 13.sp)
             }
             Spacer(modifier = Modifier.height(8.dp))
-            val prettyDate = formatDatePretty(event.date, event.time)
+            val prettyDate = DateUtils.formatDatePretty(event.date, event.time)
             DateBadge(prettyDate, textColor, isHighlight = false)
         }
     }
