@@ -200,7 +200,7 @@ class TrackingViewModel(
             .build()
 
         val periodicRequest = PeriodicWorkRequestBuilder<TrackingWorker>(
-            1, TimeUnit.HOURS
+            15, TimeUnit.MINUTES
         )
             .setConstraints(constraints)
             .build()
