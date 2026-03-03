@@ -15,13 +15,18 @@ android {
         applicationId = "com.kaeru.app"
         minSdk = 29
         targetSdk = 36
-        versionCode = 10003
-        versionName = "1.0.3"
+        versionCode = 20000
+        versionName = "2.0.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
     buildTypes {
+        debug {
+            applicationIdSuffix = ".debug"
+            versionNameSuffix = "-DEBUG"
+            isDebuggable = true
+        }
         release {
             isMinifyEnabled = true
             isShrinkResources = true
@@ -49,6 +54,7 @@ android {
 }
 
 dependencies {
+    implementation("com.kizitonwose.calendar:compose:2.10.0")
     implementation("androidx.work:work-runtime-ktx:2.11.1")
     implementation("androidx.appcompat:appcompat:1.6.1")
     implementation("com.squareup.okhttp3:okhttp-urlconnection:4.12.0")
@@ -64,7 +70,7 @@ dependencies {
     implementation("org.jsoup:jsoup:1.22.1")
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
     implementation("com.google.code.gson:gson:2.10.1")
-    implementation("androidx.compose.material3:material3:1.5.0-alpha11")
+    implementation("androidx.compose.material3:material3:1.5.0-alpha15")
     implementation("com.squareup.retrofit2:retrofit:2.9.0")
     implementation("com.squareup.retrofit2:converter-gson:2.9.0")
     implementation(libs.androidx.core.ktx)
