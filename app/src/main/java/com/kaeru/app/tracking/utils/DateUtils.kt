@@ -68,16 +68,15 @@ object DateUtils {
         val outputFormat = DateTimeFormatter.ofPattern("dd 'de' MMM", Locale("pt", "BR"))
         return "${dateObj.format(outputFormat)}, $timeStr"
     }
-    fun calculateDays(dateStr: String?, savedAt: Long, isDelivered: Boolean): String {
+    fun calculateDays(lastDateStr: String?, firstDateStr: String?, savedAt: Long, isDelivered: Boolean): String {
         return try {
-            val hoje = LocalDate.now()
-            val dataReferencia = if (isDelivered) {
-                parseToLocalDate(dateStr) ?: return "--"
+            val dataInicial = parseToLocalDate(firstDateStr) ?: Instant.ofEpochMilli(savedAt).atZone(ZoneId.systemDefault()).toLocalDate()
+            val dataFinal = if (isDelivered) {
+                parseToLocalDate(lastDateStr) ?: LocalDate.now()
             } else {
-                Instant.ofEpochMilli(savedAt).atZone(ZoneId.systemDefault()).toLocalDate()
+                LocalDate.now()
             }
-
-            val dias = kotlin.math.abs(ChronoUnit.DAYS.between(dataReferencia, hoje))
+            val dias = kotlin.math.abs(ChronoUnit.DAYS.between(dataInicial, dataFinal))
             dias.toString()
         } catch (e: Exception) {
             "--"

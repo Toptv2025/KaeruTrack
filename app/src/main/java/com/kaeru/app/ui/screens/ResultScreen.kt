@@ -7,6 +7,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -93,14 +94,14 @@ fun ResultScreen(
                         }
                     },
                     actions = {
+                        val removedMessage = stringResource(R.string.removed)
                         if (isSaved) {
                             IconButton(onClick = { showEditDialog = true }) {
                                 Icon(Icons.Outlined.Edit, contentDescription = null)
                             }
                             IconButton(onClick = {
                                 viewModel.deleteTracking(trackingCode)
-                                Toast.makeText(context,
-                                    context.getString(R.string.removed), Toast.LENGTH_SHORT).show()
+                                Toast.makeText(context,removedMessage, Toast.LENGTH_SHORT).show()
                             }) {
                                 Icon(
                                     Icons.Default.Delete,
@@ -188,14 +189,14 @@ fun ResultScreen(
                             verticalArrangement = Arrangement.spacedBy(24.dp)
                         ) {
                             item {
+                                val copiedMessage = stringResource(R.string.copied)
                                 TrackingHeaderCardCompact(
                                     code = result.tracking_code ?: trackingCode,
                                     lastStatus = events.firstOrNull()?.status ?: stringResource(R.string.awaiting),
                                     carrier = stringResource(id = detectCarrier(result.tracking_code ?: trackingCode)),
                                     onCopy = {
                                         clipboardManager.setText(AnnotatedString(it))
-                                        Toast.makeText(context,
-                                            context.getString(R.string.copied), Toast.LENGTH_SHORT)
+                                        Toast.makeText(context,copiedMessage, Toast.LENGTH_SHORT)
                                             .show()
                                     }
                                 )
@@ -264,11 +265,11 @@ fun ResultScreen(
                             }
                         },
                         confirmButton = {
+                            val savedMessage = stringResource(R.string.saved)
                             Button(
                                 onClick = {
                                     viewModel.saveTracking()
-                                    Toast.makeText(context,
-                                        context.getString(R.string.saved), Toast.LENGTH_SHORT).show()
+                                    Toast.makeText(context,savedMessage, Toast.LENGTH_SHORT).show()
                                 },
                                 colors = ButtonDefaults.buttonColors(containerColor = primaryColor)
                             ) { Text(
@@ -321,7 +322,6 @@ fun TrackingHeaderCardCompact(
     onCopy: (String) -> Unit
 ) {
     val primaryColor = MaterialTheme.colorScheme.primary
-    val cardBg = MaterialTheme.colorScheme.surfaceContainerLow
     val isDelivered = lastStatus.contains("entregue", ignoreCase = true)
 
     Card(
@@ -331,79 +331,84 @@ fun TrackingHeaderCardCompact(
         ),
         modifier = Modifier.fillMaxWidth()
     ) {
-        Box(modifier = Modifier.fillMaxWidth()) {
-            Column(modifier = Modifier.padding(24.dp)) {
+        Column(modifier = Modifier.padding(24.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
                 Text(
-                    stringResource(R.string.code),
+                    text = stringResource(R.string.code),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Bold
                 )
-                Spacer(modifier = Modifier.height(4.dp))
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    val displayCode = if (code.length > 10) code.take(10) + "..." else code
-                    Text(
-                        text = displayCode,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.Bold
+            }
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                val displayCode = if (code.length > 10) code.take(10) + "..." else code
+                Text(
+                    text = displayCode,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                IconButton(
+                    onClick = { onCopy(code) },
+                    modifier = Modifier.size(24.dp)
+                ) {
+                    Icon(
+                        Icons.Default.ContentCopy,
+                        contentDescription = stringResource(R.string.copy),
+                        tint = primaryColor,
+                        modifier = Modifier.size(16.dp)
                     )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    IconButton(
-                        onClick = { onCopy(code) },
-                        modifier = Modifier.size(24.dp)
+                }
+                Surface(
+                    color = primaryColor.copy(alpha = 0.15f),
+                    shape = CircleShape
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 2.dp),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
                         Icon(
-                            Icons.Default.ContentCopy,
-                            contentDescription = stringResource(R.string.copy),
-                            tint = primaryColor,
-                            modifier = Modifier.size(16.dp)
-                        )
-                    }
-                }
-                Spacer(modifier = Modifier.height(16.dp))
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        painter = painterResource(R.drawable.ic_package_outlined),
-                        null,
-                        tint = primaryColor,
-                        modifier = Modifier.size(18.dp)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = carrier,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        fontSize = 14.sp
-                    )
-                }
-            }
-            Surface(
-                color = primaryColor.copy(alpha = 0.15f),
-                shape = RoundedCornerShape(bottomStart = 16.dp),
-                modifier = Modifier.align(Alignment.TopEnd)
-            ) {
-                Row(
-                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    if (isDelivered) {
-                        Icon(
-                            Icons.Default.CheckCircle,
-                            null,
+                            imageVector = if (isDelivered) Icons.Default.CheckCircle else Icons.Outlined.LocalShipping,
+                            contentDescription = null,
                             tint = primaryColor,
                             modifier = Modifier.size(12.dp)
                         )
                         Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text = if (isDelivered) stringResource(R.string.delivered) else stringResource(R.string.in_transit),
+                            color = primaryColor,
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Bold
+                        )
                     }
-                    Text(
-                        text = if (isDelivered) stringResource(R.string.delivered) else stringResource(
-                            R.string.in_transit
-                        ),
-                        color = primaryColor,
-                        fontSize = 10.sp,
-                        fontWeight = FontWeight.Bold
-                    )
                 }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    painter = painterResource(R.drawable.ic_package_outlined),
+                    contentDescription = null,
+                    tint = primaryColor,
+                    modifier = Modifier.size(18.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = carrier,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontSize = 14.sp
+                )
             }
         }
     }

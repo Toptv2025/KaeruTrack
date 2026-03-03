@@ -29,12 +29,8 @@ import androidx.compose.material3.toShape
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.style.TextAlign.Companion.Center
 import com.kaeru.app.tracking.utils.DateUtils
-import java.time.Instant
+import com.kaeru.app.ui.components.TransitCalendarDialog
 import kotlin.math.abs
-import java.time.LocalDate
-import java.time.ZoneId
-import java.time.format.DateTimeFormatter
-import java.time.temporal.ChronoUnit
 
 @Composable
 fun HistoryScreen(
@@ -137,11 +133,9 @@ fun HistoryCardNew(
         val diff = System.currentTimeMillis() - item.savedAt
         TimeUnit.MILLISECONDS.toDays(diff).coerceAtLeast(0)
     }
-
-    val calculatedDays = remember(item.code, item.lastDate, item.savedAt, isDelivered) {
-        DateUtils.calculateDays(item.lastDate, item.savedAt, isDelivered)
+    val calculatedDays = remember(item.code, item.lastDate, item.firstDate, item.savedAt, isDelivered) {
+        DateUtils.calculateDays(item.lastDate, item.firstDate, item.savedAt, isDelivered)
     }
-
     val expressiveShapes = remember {
         listOf(
             MaterialShapes.Circle,
@@ -162,6 +156,7 @@ fun HistoryCardNew(
         abs(item.code.hashCode()) % expressiveShapes.size
     }
     val dynamicShape = expressiveShapes[shapeIndex].toShape()
+    var showCalendar by remember { mutableStateOf(false) }
 
     Card(
         onClick = onClick,
@@ -217,14 +212,13 @@ fun HistoryCardNew(
                 Spacer(modifier = Modifier.width(12.dp))
 
                 Column(
-                    horizontalAlignment = Alignment.End, // Alinha tudo pela direita
+                    horizontalAlignment = Alignment.CenterHorizontally,
                     modifier = Modifier
-                        .clip(RoundedCornerShape(8.dp)) // Deixa o ripple (efeito de clique) arredondado
+                        .clip(RoundedCornerShape(8.dp))
                         .clickable {
-                            // AQUI ENTRARÁ A LÓGICA DO SEU POPUP NO FUTURO
-                            println("Clicou no status da encomenda: ${item.code}")
+                            showCalendar = true
                         }
-                        .padding(4.dp) // Um respiro para o clique não ficar colado nas bordas
+                        .padding(4.dp)
                 ) {
                     Surface(
                         color = primaryColor.copy(alpha = 0.15f),
@@ -272,5 +266,14 @@ fun HistoryCardNew(
                 overflow = TextOverflow.Ellipsis
             )
         }
+    }
+    if (showCalendar) {
+        TransitCalendarDialog(
+            firstDateStr = item.firstDate,
+            lastDateStr = item.lastDate,
+            savedAt = item.savedAt,
+            isDelivered = isDelivered,
+            onDismiss = { showCalendar = false }
+        )
     }
 }

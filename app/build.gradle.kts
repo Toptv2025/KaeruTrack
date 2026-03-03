@@ -54,6 +54,7 @@ android {
 }
 
 dependencies {
+    implementation("com.kizitonwose.calendar:compose:2.10.0")
     implementation("androidx.work:work-runtime-ktx:2.11.1")
     implementation("androidx.appcompat:appcompat:1.6.1")
     implementation("com.squareup.okhttp3:okhttp-urlconnection:4.12.0")

@@ -216,13 +216,15 @@ class TrackingViewModel(
         val currentResult = trackingResult ?: return
         val currentCode = currentResult.tracking_code ?: return
         val lastEvent = currentResult.events?.firstOrNull()
+        val firstEvent = currentResult.events?.lastOrNull()
 
         viewModelScope.launch {
             val entity = TrackingEntity(
                 code = currentCode,
                 description = packageDescription.ifBlank { "Encomenda Sem Nome" },
                 lastStatus = lastEvent?.status ?: "Aguardando",
-                lastDate = lastEvent?.date ?: ""
+                lastDate = lastEvent?.date ?: "",
+                firstDate = firstEvent?.date ?: ""
             )
             dao.insertTracking(entity)
 
@@ -246,10 +248,12 @@ class TrackingViewModel(
     private suspend fun updateHistoryStatusIfExists(code: String, response: TrackingResponse) {
         val savedItem = historyList.value.find { it.code == code } ?: return
         val latestEvent = response.events?.firstOrNull() ?: return
+        val firstEvent = response.events?.lastOrNull() ?: return
+
         val updatedItem = savedItem.copy(
             lastStatus = latestEvent.status ?: savedItem.lastStatus,
             lastDate = "${latestEvent.date ?: ""} ${latestEvent.time ?: ""}".trim(),
-            savedAt = System.currentTimeMillis()
+            firstDate = "${firstEvent.date ?: ""} ${firstEvent.time ?: ""}".trim(),
         )
         dao.insertTracking(updatedItem)
     }

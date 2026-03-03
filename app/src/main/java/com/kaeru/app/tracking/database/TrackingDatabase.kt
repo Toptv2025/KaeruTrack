@@ -11,6 +11,14 @@ import androidx.room.Query
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import kotlinx.coroutines.flow.Flow
+import androidx.room.migration.Migration
+import androidx.sqlite.db.SupportSQLiteDatabase
+
+val MIGRATION_1_2 = object : Migration(1, 2) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE tracking_history ADD COLUMN firstDate TEXT DEFAULT NULL")
+    }
+}
 
 @Entity(tableName = "tracking_history")
 data class TrackingEntity(
@@ -18,6 +26,7 @@ data class TrackingEntity(
     val description: String,
     val lastStatus: String,
     val lastDate: String,
+    val firstDate: String? = null,
     val savedAt: Long = System.currentTimeMillis()
 )
 @Dao
@@ -33,7 +42,7 @@ interface TrackingDao {
     @Query("UPDATE tracking_history SET description = :newDescription WHERE code = :code")
     suspend fun updateDescription(code: String, newDescription: String)
 }
-@Database(entities = [TrackingEntity::class], version = 1, exportSchema = false)
+@Database(entities = [TrackingEntity::class], version = 2, exportSchema = false)
 abstract class AppDatabase : RoomDatabase() {
 
     abstract fun trackingDao(): TrackingDao
@@ -47,7 +56,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "kaeru_track_database"
                 )
-                    .fallbackToDestructiveMigration()
+                    .addMigrations(MIGRATION_1_2)
                     .build()
                 INSTANCE = instance
                 instance
