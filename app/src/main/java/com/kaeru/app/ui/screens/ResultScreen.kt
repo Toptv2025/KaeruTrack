@@ -265,7 +265,7 @@ fun ResultScreen(
                         confirmButton = {
                             Button(
                                 onClick = {
-                                    viewModel.saveTracking()
+                                    viewModel.saveTracking(context)
                                     Toast.makeText(context,
                                         context.getString(R.string.saved), Toast.LENGTH_SHORT).show()
                                 },
