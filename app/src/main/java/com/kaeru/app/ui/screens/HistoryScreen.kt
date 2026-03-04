@@ -134,6 +134,9 @@ fun HistoryScreen(
                         selected = currentFilter == TrackingFilter.ALL,
                         onClick = { currentFilter = TrackingFilter.ALL },
                         label = { Text("Todos") },
+                        leadingIcon = if (currentFilter == TrackingFilter.ALL) {
+                            { Icon(painterResource(R.drawable.ic_package_outlined), null, modifier = Modifier.size(16.dp)) }
+                        } else null,
                         shape = CircleShape
                     )
                 }
