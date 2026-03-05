@@ -268,7 +268,7 @@ fun ResultScreen(
                             val savedMessage = stringResource(R.string.saved)
                             Button(
                                 onClick = {
-                                    viewModel.saveTracking()
+                                    viewModel.saveTracking(context)
                                     Toast.makeText(context,savedMessage, Toast.LENGTH_SHORT).show()
                                 },
                                 colors = ButtonDefaults.buttonColors(containerColor = primaryColor)
