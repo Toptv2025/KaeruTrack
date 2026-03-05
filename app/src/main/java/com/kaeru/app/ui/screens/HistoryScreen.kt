@@ -42,7 +42,10 @@ fun HistoryScreen(
     val backgroundColor = MaterialTheme.colorScheme.background
     val primaryColor = MaterialTheme.colorScheme.primary
     val onBackground = MaterialTheme.colorScheme.onBackground
-    var currentFilter by rememberSaveable { mutableStateOf(TrackingFilter.IN_TRANSIT) }
+    val defaultFilter by viewModel.defaultHistoryFilter.collectAsState()
+    var currentFilter by rememberSaveable(defaultFilter) {
+        mutableStateOf(defaultFilter)
+    }
     val filteredHistory = remember(history, currentFilter) {
         when (currentFilter) {
             TrackingFilter.IN_TRANSIT -> history.filter {
@@ -57,78 +60,75 @@ fun HistoryScreen(
         }
     }
 
-    LazyColumn(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(backgroundColor)
-            .padding(horizontal = 16.dp),
-        contentPadding = PaddingValues(bottom = 80.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
-        item {
-            Column {
-                Spacer(modifier = Modifier.height(24.dp))
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = 8.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = stringResource(R.string.packages),
-                        color = onBackground,
-                        fontSize = 32.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-
-                    if (filteredHistory.isNotEmpty()) {
-                        Surface(
-                            color = primaryColor,
-                            shape = CircleShape,
-                            modifier = Modifier
-                                .height(32.dp)
-                                .widthIn(min = 32.dp)
-                        ) {
-                            Box(
-                                contentAlignment = Alignment.Center,
-                                modifier = Modifier.padding(horizontal = 8.dp)
+    Scaffold(
+        snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
+        containerColor = Color.Transparent
+    ) { paddingValues ->
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(backgroundColor)
+                .padding(horizontal = 16.dp),
+            contentPadding = PaddingValues(bottom = 80.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            item {
+                Column {
+                    Spacer(modifier = Modifier.height(24.dp))
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 8.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = stringResource(R.string.packages),
+                            color = onBackground,
+                            fontSize = 32.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                        if (filteredHistory.isNotEmpty()) {
+                            Surface(
+                                color = primaryColor,
+                                shape = CircleShape,
+                                modifier = Modifier
+                                    .height(32.dp)
+                                    .widthIn(min = 32.dp)
                             ) {
-                                Text(
-                                    text = filteredHistory.size.toString(),
-                                    color = MaterialTheme.colorScheme.onPrimary,
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 14.sp
-                                )
+                                Box(
+                                    contentAlignment = Alignment.Center,
+                                    modifier = Modifier.padding(horizontal = 8.dp)
+                                ) {
+                                    Text(
+                                        text = filteredHistory.size.toString(),
+                                        color = MaterialTheme.colorScheme.onPrimary,
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 14.sp
+                                    )
+                                }
                             }
                         }
                     }
-                }
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = 8.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    FilterChip(
-                        selected = currentFilter == TrackingFilter.IN_TRANSIT,
-                        onClick = { currentFilter = TrackingFilter.IN_TRANSIT },
-                        label = { Text("Em trânsito") },
-                        leadingIcon = if (currentFilter == TrackingFilter.IN_TRANSIT) {
-                            { Icon(Icons.Outlined.LocalShipping, null, modifier = Modifier.size(16.dp)) }
-                        } else null,
-                        shape = CircleShape
-                    )
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        AnimatedFilterChip(
+                            selected = currentFilter == TrackingFilter.IN_TRANSIT,
+                            onClick = { currentFilter = TrackingFilter.IN_TRANSIT },
+                            label = stringResource(R.string.in_transit_label),
+                            icon = Icons.Outlined.LocalShipping
+                        )
 
-                    FilterChip(
-                        selected = currentFilter == TrackingFilter.DELIVERED,
-                        onClick = { currentFilter = TrackingFilter.DELIVERED },
-                        label = { Text("Entregues") },
-                        leadingIcon = if (currentFilter == TrackingFilter.DELIVERED) {
-                            { Icon(Icons.Default.CheckCircle, null, modifier = Modifier.size(16.dp)) }
-                        } else null,
-                        shape = CircleShape
-                    )
+                        AnimatedFilterChip(
+                            selected = currentFilter == TrackingFilter.DELIVERED,
+                            onClick = { currentFilter = TrackingFilter.DELIVERED },
+                            label = stringResource(R.string.delivered_label),
+                            icon = Icons.Default.CheckCircle
+                        )
 
                     FilterChip(
                         selected = currentFilter == TrackingFilter.ALL,
