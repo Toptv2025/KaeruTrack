@@ -9,10 +9,14 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.work.Data
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkManager
 import com.kaeru.app.BuildConfig
 import com.kaeru.app.R
 import com.kaeru.app.data.utils.GithubRelease
@@ -20,6 +24,7 @@ import com.kaeru.app.data.utils.UpdateManager
 import com.kaeru.app.ui.components.Material3SettingsGroup
 import com.kaeru.app.ui.components.Material3SettingsItem
 import com.kaeru.app.tracking.TrackingViewModel
+import com.kaeru.app.tracking.TrackingWorker
 import com.kaeru.app.ui.components.IconSwitch
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
