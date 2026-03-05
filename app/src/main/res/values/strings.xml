@@ -97,4 +97,6 @@
     <string name="theme_description">Customize your app theme</string>
     <string name="themes_and_appearance">Themes and appearance</string>
     <string name="appearance">Appearance</string>
+    <string name="deleted_order">Order deleted</string>
+    <string name="undo_action">Undo</string>
 </resources>

@@ -96,4 +96,6 @@
     <string name="theme_description">Customize o tema do seu aplicativo</string>
     <string name="themes_and_appearance">Temas e Aparência</string>
     <string name="appearance">Aparência</string>
+    <string name="deleted_order">Encomenda apagada</string>
+    <string name="undo_action">Desfazer</string>
 </resources>
