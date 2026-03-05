@@ -191,28 +191,27 @@ class TrackingViewModel(
         }
     }
 
-    fun scheduleTrackingWorker() {
-        val context = getApplication<Application>().applicationContext
-        val workManager = WorkManager.getInstance(context)
+    companion object {
+        fun scheduleTrackingWorker(context: Context) {
+            val constraints = Constraints.Builder()
+                .setRequiredNetworkType(NetworkType.CONNECTED)
+                .build()
 
-        val constraints = Constraints.Builder()
-            .setRequiredNetworkType(NetworkType.CONNECTED)
-            .build()
+            val periodicRequest = PeriodicWorkRequestBuilder<TrackingWorker>(
+                15, TimeUnit.MINUTES
+            )
+                .setConstraints(constraints)
+                .build()
 
-        val periodicRequest = PeriodicWorkRequestBuilder<TrackingWorker>(
-            15, TimeUnit.MINUTES
-        )
-            .setConstraints(constraints)
-            .build()
-
-        workManager.enqueueUniquePeriodicWork(
-            "KaeruTrackingWorker",
-            ExistingPeriodicWorkPolicy.KEEP,
-            periodicRequest
-        )
+            WorkManager.getInstance(context).enqueueUniquePeriodicWork(
+                "KaeruTrackingWorker",
+                ExistingPeriodicWorkPolicy.KEEP,
+                periodicRequest
+            )
+        }
     }
 
-    fun saveTracking() {
+    fun saveTracking(context: Context) {
         val currentResult = trackingResult ?: return
         val currentCode = currentResult.tracking_code ?: return
         val lastEvent = currentResult.events?.firstOrNull()
@@ -228,7 +227,7 @@ class TrackingViewModel(
             )
             dao.insertTracking(entity)
 
-            scheduleTrackingWorker()
+            scheduleTrackingWorker(context)
 
             showSaveDialog = false
             packageDescription = ""
