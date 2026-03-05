@@ -9,6 +9,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.outlined.LocalShipping
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -32,6 +33,11 @@ import com.kaeru.app.tracking.utils.DateUtils
 import com.kaeru.app.ui.components.TransitCalendarDialog
 import kotlin.math.abs
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.graphics.Color
+import com.kaeru.app.ui.components.AnimatedFilterChip
+import kotlinx.coroutines.launch
 
 @Composable
 fun HistoryScreen(
@@ -42,7 +48,10 @@ fun HistoryScreen(
     val backgroundColor = MaterialTheme.colorScheme.background
     val primaryColor = MaterialTheme.colorScheme.primary
     val onBackground = MaterialTheme.colorScheme.onBackground
-    var currentFilter by rememberSaveable { mutableStateOf(TrackingFilter.IN_TRANSIT) }
+    val defaultFilter by viewModel.defaultHistoryFilter.collectAsState()
+    var currentFilter by rememberSaveable(defaultFilter) {
+        mutableStateOf(defaultFilter)
+    }
     val filteredHistory = remember(history, currentFilter) {
         when (currentFilter) {
             TrackingFilter.IN_TRANSIT -> history.filter {
@@ -56,119 +65,157 @@ fun HistoryScreen(
             TrackingFilter.ALL -> history
         }
     }
+    val coroutineScope = rememberCoroutineScope()
+    val snackbarHostState = remember { SnackbarHostState() }
+    val isSwipeEnabled by viewModel.isSwipeToDeleteEnabled.collectAsState()
 
-    LazyColumn(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(backgroundColor)
-            .padding(horizontal = 16.dp),
-        contentPadding = PaddingValues(bottom = 80.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
-        item {
-            Column {
-                Spacer(modifier = Modifier.height(24.dp))
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = 8.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = stringResource(R.string.packages),
-                        color = onBackground,
-                        fontSize = 32.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-
-                    if (filteredHistory.isNotEmpty()) {
-                        Surface(
-                            color = primaryColor,
-                            shape = CircleShape,
-                            modifier = Modifier
-                                .height(32.dp)
-                                .widthIn(min = 32.dp)
-                        ) {
-                            Box(
-                                contentAlignment = Alignment.Center,
-                                modifier = Modifier.padding(horizontal = 8.dp)
+    Scaffold(
+        snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
+        containerColor = Color.Transparent
+    ) { paddingValues ->
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(backgroundColor)
+                .padding(horizontal = 16.dp),
+            contentPadding = PaddingValues(bottom = 80.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            item {
+                Column {
+                    Spacer(modifier = Modifier.height(24.dp))
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 8.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = stringResource(R.string.packages),
+                            color = onBackground,
+                            fontSize = 32.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                        if (filteredHistory.isNotEmpty()) {
+                            Surface(
+                                color = primaryColor,
+                                shape = CircleShape,
+                                modifier = Modifier
+                                    .height(32.dp)
+                                    .widthIn(min = 32.dp)
                             ) {
-                                Text(
-                                    text = filteredHistory.size.toString(),
-                                    color = MaterialTheme.colorScheme.onPrimary,
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 14.sp
-                                )
+                                Box(
+                                    contentAlignment = Alignment.Center,
+                                    modifier = Modifier.padding(horizontal = 8.dp)
+                                ) {
+                                    Text(
+                                        text = filteredHistory.size.toString(),
+                                        color = MaterialTheme.colorScheme.onPrimary,
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 14.sp
+                                    )
+                                }
                             }
                         }
                     }
-                }
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = 8.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    FilterChip(
-                        selected = currentFilter == TrackingFilter.IN_TRANSIT,
-                        onClick = { currentFilter = TrackingFilter.IN_TRANSIT },
-                        label = { Text("Em trânsito") },
-                        leadingIcon = if (currentFilter == TrackingFilter.IN_TRANSIT) {
-                            { Icon(Icons.Outlined.LocalShipping, null, modifier = Modifier.size(16.dp)) }
-                        } else null,
-                        shape = CircleShape
-                    )
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        AnimatedFilterChip(
+                            selected = currentFilter == TrackingFilter.IN_TRANSIT,
+                            onClick = { currentFilter = TrackingFilter.IN_TRANSIT },
+                            label = stringResource(R.string.in_transit_label),
+                            icon = Icons.Outlined.LocalShipping
+                        )
 
-                    FilterChip(
-                        selected = currentFilter == TrackingFilter.DELIVERED,
-                        onClick = { currentFilter = TrackingFilter.DELIVERED },
-                        label = { Text("Entregues") },
-                        leadingIcon = if (currentFilter == TrackingFilter.DELIVERED) {
-                            { Icon(Icons.Default.CheckCircle, null, modifier = Modifier.size(16.dp)) }
-                        } else null,
-                        shape = CircleShape
-                    )
+                        AnimatedFilterChip(
+                            selected = currentFilter == TrackingFilter.DELIVERED,
+                            onClick = { currentFilter = TrackingFilter.DELIVERED },
+                            label = stringResource(R.string.delivered_label),
+                            icon = Icons.Default.CheckCircle
+                        )
 
-                    FilterChip(
-                        selected = currentFilter == TrackingFilter.ALL,
-                        onClick = { currentFilter = TrackingFilter.ALL },
-                        label = { Text("Todos") },
-                        leadingIcon = if (currentFilter == TrackingFilter.ALL) {
-                            { Icon(painterResource(R.drawable.ic_package_outlined), null, modifier = Modifier.size(16.dp)) }
-                        } else null,
-                        shape = CircleShape
-                    )
-                }
-            }
-        }
-
-        if (history.isEmpty()) {
-            item {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(300.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    val emptyText = when(currentFilter) {
-                        TrackingFilter.IN_TRANSIT -> "Nenhuma encomenda em trânsito"
-                        TrackingFilter.DELIVERED -> "Nenhuma encomenda entregue"
-                        TrackingFilter.ALL -> stringResource(R.string.no_packages_saved)
+                        AnimatedFilterChip(
+                            selected = currentFilter == TrackingFilter.ALL,
+                            onClick = { currentFilter = TrackingFilter.ALL },
+                            label = stringResource(R.string.all_label),
+                            icon = Icons.Default.CheckCircle
+                        )
                     }
-                    Text(
-                        text = emptyText,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
                 }
             }
-        } else {
-            items(filteredHistory, key = { it.code }) { item ->
-                Box(modifier = Modifier.animateItem()) {
-                    HistoryCardNew(
-                        item = item,
-                        onClick = { onNavigateToResult(item.code) }
+            if (history.isEmpty()) {
+                item {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(300.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        val emptyText = when (currentFilter) {
+                            TrackingFilter.IN_TRANSIT -> stringResource(R.string.no_packages_saved)
+                            TrackingFilter.DELIVERED -> stringResource(R.string.no_packages_saved)
+                            TrackingFilter.ALL -> stringResource(R.string.no_packages_saved)
+                        }
+                        Text(
+                            text = emptyText,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            } else {
+                items(filteredHistory, key = { it.code }) { item ->
+
+                    var hasFiredDelete by remember { mutableStateOf(false) }
+                    val deletedOrder = stringResource(R.string.deleted_order)
+                    val undoAction = stringResource(R.string.undo_action)
+
+                    val dismissState = rememberSwipeToDismissBoxState(
+                        positionalThreshold = { totalDistance -> totalDistance * 0.5f },
+                        confirmValueChange = { dismissValue ->
+
+                            if (dismissValue == SwipeToDismissBoxValue.EndToStart) {
+
+                                if (!hasFiredDelete) {
+                                    hasFiredDelete = true
+
+                                    viewModel.deleteTracking(item.code)
+
+                                    coroutineScope.launch {
+                                        val result = snackbarHostState.showSnackbar(
+                                            message = deletedOrder,
+                                            actionLabel = undoAction,
+                                            duration = SnackbarDuration.Short
+                                        )
+
+                                        if (result == SnackbarResult.ActionPerformed) {
+                                            viewModel.restoreTracking(item)
+                                        }
+                                    }
+                                }
+                                false
+                            } else {
+                                false
+                            }
+                        }
                     )
+
+                    SwipeToDismissBox(
+                        state = dismissState,
+                        enableDismissFromEndToStart = isSwipeEnabled,
+                        enableDismissFromStartToEnd = false,
+                        backgroundContent = { SwipeToDeleteIcon(dismissState) },
+                        modifier = Modifier.animateItem()
+                    ) {
+                        HistoryCardNew(
+                            item = item,
+                            onClick = { onNavigateToResult(item.code) }
+                        )
+                    }
                 }
             }
         }
@@ -337,4 +384,36 @@ fun HistoryCardNew(
 
 enum class TrackingFilter {
     IN_TRANSIT, DELIVERED, ALL
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun SwipeToDeleteIcon(state: SwipeToDismissBoxState) {
+    val isDragging = state.dismissDirection == SwipeToDismissBoxValue.EndToStart
+    val dragAmount = if (!isDragging) 0f else {
+        if (state.targetValue == SwipeToDismissBoxValue.Settled) {
+            state.progress * 0.5f
+        } else {
+            0.5f + (1f - state.progress) * 0.5f
+        }
+    }
+    val iconAlpha = dragAmount.coerceIn(0f, 1f)
+    val iconScale = (0.5f + (dragAmount * 0.7f)).coerceIn(0.5f, 1.2f)
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(horizontal = 24.dp),
+        contentAlignment = Alignment.CenterEnd
+    ) {
+        Icon(
+            imageVector = Icons.Default.Delete,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.error,
+            modifier = Modifier
+                .size(28.dp)
+                .scale(iconScale)
+                .alpha(iconAlpha)
+        )
+    }
 }

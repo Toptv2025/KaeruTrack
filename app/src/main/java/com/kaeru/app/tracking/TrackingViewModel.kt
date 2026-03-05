@@ -35,6 +35,8 @@ import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.NetworkType
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
+import com.kaeru.app.AppDestinations
+import com.kaeru.app.ui.screens.TrackingFilter
 import com.kaeru.app.ui.screens.settings.SYSTEM_DEFAULT
 import java.util.concurrent.TimeUnit
 
@@ -137,13 +139,37 @@ class TrackingViewModel(
     var errorMessage by mutableStateOf<String?>(null)
     var showSaveDialog by mutableStateOf(false)
     var packageDescription by mutableStateOf("")
-    private val _profileImageUri = MutableStateFlow<Uri?>(
-        prefs.getString("profile_uri", null)?.let { Uri.parse(it) }
+    private val _isSwipeToDeleteEnabled = MutableStateFlow(prefs.getBoolean("swipe_to_delete", false)) // Vou deixar 'false' como padrão já que você odiou rs
+    val isSwipeToDeleteEnabled: StateFlow<Boolean> = _isSwipeToDeleteEnabled.asStateFlow()
+
+    fun toggleSwipeToDelete(enabled: Boolean) {
+        _isSwipeToDeleteEnabled.value = enabled
+        prefs.edit().putBoolean("swipe_to_delete", enabled).apply()
+    }
+    private val _isSlimNav = MutableStateFlow(prefs.getBoolean("slim_navbar", false))
+    val isSlimNav: StateFlow<Boolean> = _isSlimNav.asStateFlow()
+
+    fun toggleSlimNav(enabled: Boolean) {
+        _isSlimNav.value = enabled
+        prefs.edit().putBoolean("slim_navbar", enabled).apply()
+    }
+    private val _defaultOpenTab = MutableStateFlow(
+        AppDestinations.valueOf(prefs.getString("default_tab", AppDestinations.SEARCH.name) ?: AppDestinations.SEARCH.name)
     )
-    val profileImageUri: StateFlow<Uri?> = _profileImageUri.asStateFlow()
-    fun updateProfileImage(uri: Uri) {
-        _profileImageUri.value = uri
-        prefs.edit().putString("profile_uri", uri.toString()).apply()
+    val defaultOpenTab: StateFlow<AppDestinations> = _defaultOpenTab.asStateFlow()
+
+    fun setDefaultTab(tab: AppDestinations) {
+        _defaultOpenTab.value = tab
+        prefs.edit().putString("default_tab", tab.name).apply()
+    }
+    private val _defaultHistoryFilter = MutableStateFlow(
+        TrackingFilter.valueOf(prefs.getString("default_filter", TrackingFilter.IN_TRANSIT.name) ?: TrackingFilter.IN_TRANSIT.name)
+    )
+    val defaultHistoryFilter: StateFlow<TrackingFilter> = _defaultHistoryFilter.asStateFlow()
+
+    fun setDefaultHistoryFilter(filter: TrackingFilter) {
+        _defaultHistoryFilter.value = filter
+        prefs.edit().putString("default_filter", filter.name).apply()
     }
     private var searchJob: Job? = null
     fun trackPackage(code: String) {
@@ -242,6 +268,11 @@ class TrackingViewModel(
     fun deleteTracking(code: String) {
         viewModelScope.launch {
             dao.deleteTracking(code)
+        }
+    }
+    fun restoreTracking(item: TrackingEntity) {
+        viewModelScope.launch {
+            dao.insertTracking(item)
         }
     }
     private suspend fun updateHistoryStatusIfExists(code: String, response: TrackingResponse) {
