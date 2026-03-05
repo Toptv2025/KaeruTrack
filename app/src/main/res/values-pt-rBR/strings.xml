@@ -82,4 +82,18 @@
     <string name="home_profile">Perfil</string>
     <string name="app_language">Idioma</string>
     <string name="system_default">Padrão do sistema</string>
+    <string name="in_transit_label">Em trânsito</string>
+    <string name="delivered_label">Entregues</string>
+    <string name="all_label">Todos</string>
+    <string name="swipe_to_delete">Ativar deslizar para deletar</string>
+    <string name="slim_nav_bar">Barra de navegação compacta</string>
+    <string name="change_default_open_tab">Mudar aba inicial padrão</string>
+    <string name="change_default_history_chip">Mudar filtro padrão do histórico</string>
+    <string name="search_tab_label">Pesquisar</string>
+    <string name="history_tab_label">Histórico</string>
+    <string name="profile_tab_label">Perfil</string>
+    <string name="theme">Tema</string>
+    <string name="theme_description">Customize o tema do seu aplicativo</string>
+    <string name="themes_and_appearance">Temas e Aparência</string>
+    <string name="appearance">Aparência</string>
 </resources>

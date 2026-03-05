@@ -25,6 +25,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
@@ -186,7 +187,7 @@ fun KaeruNavGraph(viewModel: TrackingViewModel, updateRelease: GithubRelease?) {
                 updateRelease = updateRelease,
                 onBack = { navController.popBackStack() },
                 onAppearanceClick = {
-                    navController.navigate(Routes.THEME)
+                    navController.navigate(Routes.APPEARANCE)
                 },
                 onBackupClick = {
                     navController.navigate(Routes.BACKUP)
@@ -263,17 +264,21 @@ fun KaeruTabsScreen(
     onNavigateToResult: (String) -> Unit,
     onNavigateToSettings: () -> Unit
 ) {
-    var currentTab by rememberSaveable { mutableStateOf(AppDestinations.SEARCH) }
+    val defaultTab by viewModel.defaultOpenTab.collectAsState()
+    var currentTab by rememberSaveable(defaultTab) { mutableStateOf(defaultTab) }
     val checkUpdatesEnabled by viewModel.checkUpdatesOnStart.collectAsState()
+    val isSlimNav by viewModel.isSlimNav.collectAsState()
+    val bottomBarHeight = if (isSlimNav) 80.dp else 96.dp
 
     Scaffold(
         bottomBar = {
-            NavigationBar {
+            NavigationBar(modifier = Modifier.height(bottomBarHeight)) {
                 AppDestinations.entries.forEach { destination ->
                     NavigationBarItem(
                         selected = destination == currentTab,
                         onClick = { currentTab = destination },
-                        label = { Text(stringResource(destination.label)) },
+                        label = if (isSlimNav) null else { { Text(stringResource(destination.label)) }},
+                        alwaysShowLabel = !isSlimNav,
                         icon = {
                             BadgedBox(
                                 badge = {
