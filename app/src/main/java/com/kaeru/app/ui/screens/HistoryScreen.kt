@@ -31,6 +31,7 @@ import androidx.compose.ui.text.style.TextAlign.Companion.Center
 import com.kaeru.app.tracking.utils.DateUtils
 import com.kaeru.app.ui.components.TransitCalendarDialog
 import kotlin.math.abs
+import androidx.compose.runtime.saveable.rememberSaveable
 
 @Composable
 fun HistoryScreen(
@@ -38,10 +39,23 @@ fun HistoryScreen(
     onNavigateToResult: (String) -> Unit
 ) {
     val history by viewModel.historyList.collectAsState()
-
     val backgroundColor = MaterialTheme.colorScheme.background
     val primaryColor = MaterialTheme.colorScheme.primary
     val onBackground = MaterialTheme.colorScheme.onBackground
+    var currentFilter by rememberSaveable { mutableStateOf(TrackingFilter.IN_TRANSIT) }
+    val filteredHistory = remember(history, currentFilter) {
+        when (currentFilter) {
+            TrackingFilter.IN_TRANSIT -> history.filter {
+                !it.lastStatus.contains("entregue", ignoreCase = true) &&
+                        !it.lastStatus.contains("delivered", ignoreCase = true)
+            }
+            TrackingFilter.DELIVERED -> history.filter {
+                it.lastStatus.contains("entregue", ignoreCase = true) ||
+                        it.lastStatus.contains("delivered", ignoreCase = true)
+            }
+            TrackingFilter.ALL -> history
+        }
+    }
 
     LazyColumn(
         modifier = Modifier
@@ -68,7 +82,7 @@ fun HistoryScreen(
                         fontWeight = FontWeight.Bold
                     )
 
-                    if (history.isNotEmpty()) {
+                    if (filteredHistory.isNotEmpty()) {
                         Surface(
                             color = primaryColor,
                             shape = CircleShape,
@@ -81,7 +95,7 @@ fun HistoryScreen(
                                 modifier = Modifier.padding(horizontal = 8.dp)
                             ) {
                                 Text(
-                                    text = history.size.toString(),
+                                    text = filteredHistory.size.toString(),
                                     color = MaterialTheme.colorScheme.onPrimary,
                                     fontWeight = FontWeight.Bold,
                                     fontSize = 14.sp
@@ -89,6 +103,42 @@ fun HistoryScreen(
                             }
                         }
                     }
+                }
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    FilterChip(
+                        selected = currentFilter == TrackingFilter.IN_TRANSIT,
+                        onClick = { currentFilter = TrackingFilter.IN_TRANSIT },
+                        label = { Text("Em trânsito") },
+                        leadingIcon = if (currentFilter == TrackingFilter.IN_TRANSIT) {
+                            { Icon(Icons.Outlined.LocalShipping, null, modifier = Modifier.size(16.dp)) }
+                        } else null,
+                        shape = CircleShape
+                    )
+
+                    FilterChip(
+                        selected = currentFilter == TrackingFilter.DELIVERED,
+                        onClick = { currentFilter = TrackingFilter.DELIVERED },
+                        label = { Text("Entregues") },
+                        leadingIcon = if (currentFilter == TrackingFilter.DELIVERED) {
+                            { Icon(Icons.Default.CheckCircle, null, modifier = Modifier.size(16.dp)) }
+                        } else null,
+                        shape = CircleShape
+                    )
+
+                    FilterChip(
+                        selected = currentFilter == TrackingFilter.ALL,
+                        onClick = { currentFilter = TrackingFilter.ALL },
+                        label = { Text("Todos") },
+                        leadingIcon = if (currentFilter == TrackingFilter.ALL) {
+                            { Icon(painterResource(R.drawable.ic_package_outlined), null, modifier = Modifier.size(16.dp)) }
+                        } else null,
+                        shape = CircleShape
+                    )
                 }
             }
         }
@@ -101,18 +151,25 @@ fun HistoryScreen(
                         .height(300.dp),
                     contentAlignment = Alignment.Center
                 ) {
+                    val emptyText = when(currentFilter) {
+                        TrackingFilter.IN_TRANSIT -> "Nenhuma encomenda em trânsito"
+                        TrackingFilter.DELIVERED -> "Nenhuma encomenda entregue"
+                        TrackingFilter.ALL -> stringResource(R.string.no_packages_saved)
+                    }
                     Text(
-                        text = stringResource(R.string.no_packages_saved),
+                        text = emptyText,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }
         } else {
-            items(history) { item ->
-                HistoryCardNew(
-                    item = item,
-                    onClick = { onNavigateToResult(item.code) }
-                )
+            items(filteredHistory, key = { it.code }) { item ->
+                Box(modifier = Modifier.animateItem()) {
+                    HistoryCardNew(
+                        item = item,
+                        onClick = { onNavigateToResult(item.code) }
+                    )
+                }
             }
         }
     }
@@ -276,4 +333,8 @@ fun HistoryCardNew(
             onDismiss = { showCalendar = false }
         )
     }
+}
+
+enum class TrackingFilter {
+    IN_TRANSIT, DELIVERED, ALL
 }
