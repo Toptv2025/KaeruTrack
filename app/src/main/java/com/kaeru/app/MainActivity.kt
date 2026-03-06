@@ -139,7 +139,7 @@ class MainActivity : ComponentActivity() {
 // rotas
 object Routes {
     const val HOME = "home_screen"
-    const val RESULT = "result_screen/{code}"
+    const val RESULT = "result_screen/{code}?carrier={carrier}"
     const val SETTINGS = "settings_screen"
     const val APPEARANCE = "appearance_screen"
     const val THEME = "theme_screen"
@@ -172,8 +172,8 @@ fun KaeruNavGraph(viewModel: TrackingViewModel, updateRelease: GithubRelease?) {
             KaeruTabsScreen(
                 viewModel = viewModel,
                 updateRelease = updateRelease,
-                onNavigateToResult = { code ->
-                    navController.navigate("result_screen/$code")
+                onNavigateToResult = { code, carrier ->
+                    navController.navigate("result_screen/$code?carrier=$carrier")
                 },
                 onNavigateToSettings = {
                     navController.navigate(Routes.SETTINGS)
@@ -220,12 +220,18 @@ fun KaeruNavGraph(viewModel: TrackingViewModel, updateRelease: GithubRelease?) {
 
         composable(
             route = Routes.RESULT,
-            arguments = listOf(navArgument("code") { type = NavType.StringType })
+            arguments = listOf(navArgument("code") { type = NavType.StringType },
+                navArgument("carrier") {
+                    type = NavType.StringType
+                    defaultValue = "Auto"
+                })
         ) { backStackEntry ->
             val code = backStackEntry.arguments?.getString("code") ?: ""
+            val carrier = backStackEntry.arguments?.getString("carrier") ?: "Auto"
 
             ResultScreen(
                 trackingCode = code,
+                carrier = carrier,
                 viewModel = viewModel,
                 onBack = {
                     navController.popBackStack()
@@ -261,7 +267,7 @@ fun KaeruNavGraph(viewModel: TrackingViewModel, updateRelease: GithubRelease?) {
 fun KaeruTabsScreen(
     viewModel: TrackingViewModel,
     updateRelease: GithubRelease?,
-    onNavigateToResult: (String) -> Unit,
+    onNavigateToResult: (String, String) -> Unit,
     onNavigateToSettings: () -> Unit
 ) {
     val defaultTab by viewModel.defaultOpenTab.collectAsState()
@@ -319,7 +325,7 @@ fun KaeruTabsScreen(
                     AppDestinations.HISTORY -> {
                         HistoryScreen(
                             viewModel = viewModel,
-                            onNavigateToResult = onNavigateToResult
+                            onNavigateToResult = { code -> onNavigateToResult(code, "Auto") }
                         )
                     }
                     AppDestinations.SEARCH -> {

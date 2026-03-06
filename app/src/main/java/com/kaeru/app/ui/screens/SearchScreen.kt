@@ -1,17 +1,20 @@
 package com.kaeru.app.ui.screens
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -22,12 +25,16 @@ import com.kaeru.app.R
 
 @Composable
 fun SearchScreen(
-    onNavigateToResult: (String) -> Unit,
+    onNavigateToResult: (String, String) -> Unit,
     modifier: Modifier = Modifier
 ) {
     var trackingCode by remember { mutableStateOf("") }
     val finalCode = trackingCode.uppercase().trim()
     val focusManager = LocalFocusManager.current
+
+    val carriers = listOf("Auto", "Correios", "Loggi", "Shopee", "AliExpress", "Shein", "Melhor Envio", "Total Express")
+    var selectedCarrier by remember { mutableStateOf(carriers[0]) }
+    var isDropdownExpanded by remember { mutableStateOf(false) }
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background
@@ -56,7 +63,6 @@ fun SearchScreen(
                             tint = MaterialTheme.colorScheme.primary,
                             modifier = Modifier
                                 .size(64.dp)
-
                         )
                     }
                 }
@@ -84,20 +90,65 @@ fun SearchScreen(
                     keyboardActions = KeyboardActions(onSearch = {
                         if (finalCode.isNotEmpty()) {
                             focusManager.clearFocus()
-                            onNavigateToResult(finalCode)
+                            onNavigateToResult(finalCode, selectedCarrier)
                         }
                     }),
                     trailingIcon = {
-                        FilledIconButton(
-                            onClick = {
-                                if (finalCode.isNotEmpty()) {
-                                    focusManager.clearFocus()
-                                    onNavigateToResult(finalCode)
-                                }
-                            },
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
                             modifier = Modifier.padding(end = 4.dp)
                         ) {
-                            Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = null)
+                            Box {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier
+                                        .clip(CircleShape)
+                                        .clickable { isDropdownExpanded = true }
+                                        .padding(horizontal = 8.dp, vertical = 6.dp)
+                                ) {
+                                    Text(
+                                        text = selectedCarrier,
+                                        style = MaterialTheme.typography.labelLarge,
+                                        color = MaterialTheme.colorScheme.secondary
+                                    )
+                                    Icon(
+                                        imageVector = Icons.Default.ArrowDropDown,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.secondary
+                                    )
+                                }
+                                DropdownMenu(
+                                    expanded = isDropdownExpanded,
+                                    onDismissRequest = { isDropdownExpanded = false },
+                                    shape = RoundedCornerShape(16.dp)
+                                ) {
+                                    carriers.forEach { carrier ->
+                                        DropdownMenuItem(
+                                            text = {
+                                                Text(
+                                                    text = carrier,
+                                                    fontWeight = if (carrier == selectedCarrier) FontWeight.Bold else FontWeight.Normal
+                                                )
+                                            },
+                                            onClick = {
+                                                selectedCarrier = carrier
+                                                isDropdownExpanded = false
+                                            }
+                                        )
+                                    }
+                                }
+                            }
+                            Spacer(modifier = Modifier.width(4.dp))
+                            FilledIconButton(
+                                onClick = {
+                                    if (finalCode.isNotEmpty()) {
+                                        focusManager.clearFocus()
+                                        onNavigateToResult(finalCode, selectedCarrier)
+                                    }
+                                },
+                            ) {
+                                Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = null)
+                            }
                         }
                     }
                 )

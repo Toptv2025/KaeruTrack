@@ -1,5 +1,6 @@
 package com.kaeru.app.ui.screens
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -36,8 +37,10 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.style.TextAlign
 import com.kaeru.app.ui.components.AnimatedFilterChip
 import kotlinx.coroutines.launch
+import androidx.compose.ui.graphics.ColorFilter
 
 @Composable
 fun HistoryScreen(
@@ -148,24 +151,13 @@ fun HistoryScreen(
                     }
                 }
             }
-            if (history.isEmpty()) {
+            if (filteredHistory.isEmpty()) {
                 item {
-                    Box(
+                    EmptyHistoryState(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(300.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        val emptyText = when (currentFilter) {
-                            TrackingFilter.IN_TRANSIT -> stringResource(R.string.no_packages_saved)
-                            TrackingFilter.DELIVERED -> stringResource(R.string.no_packages_saved)
-                            TrackingFilter.ALL -> stringResource(R.string.no_packages_saved)
-                        }
-                        Text(
-                            text = emptyText,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
+                            .fillParentMaxHeight(1f)
+                    )
                 }
             } else {
                 items(filteredHistory, key = { it.code }) { item ->
@@ -414,6 +406,37 @@ fun SwipeToDeleteIcon(state: SwipeToDismissBoxState) {
                 .size(28.dp)
                 .scale(iconScale)
                 .alpha(iconAlpha)
+        )
+    }
+}
+
+@Composable
+fun EmptyHistoryState(modifier: Modifier = Modifier) {
+    Column(
+        modifier = modifier,
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Image(
+            painter = painterResource(id = R.drawable.ic_empty_screen),
+            contentDescription = "Histórico vazio",
+            modifier = Modifier
+                .size(220.dp)
+                .padding(bottom = 24.dp),
+            colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.onSurfaceVariant)
+        )
+        Text(
+            text = "Parece meio vazio aqui...",
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            fontSize = 22.sp,
+            modifier = Modifier
+                .padding(bottom = 15.dp),
+            textAlign = TextAlign.Center
+        )
+        Text(
+            text = "Ainda sem encomendas",
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center
         )
     }
 }

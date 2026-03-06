@@ -30,12 +30,12 @@ class TrackingRepository(private val context: Context) {
             listOf("ME").any { cleanCode.startsWith(it) } && cleanCode.length >= 12 -> true
             listOf("AJ").any { cleanCode.startsWith(it) } && cleanCode.length >= 12 -> true
             listOf("BR", "SPX").any { cleanCode.startsWith(it) } && cleanCode.length >= 12 -> true
+            listOf("TX").any { cleanCode.startsWith(it) } || listOf("TX").any { cleanCode.endsWith(it) } -> true
             listOf("AD", "AB", "AN").any { cleanCode.startsWith(it) } && cleanCode.length >= 12 -> true
             else -> false
         }
     }
-
-    suspend fun trackPackage(code: String, forceRefresh: Boolean = false): TrackingResponse? {
+    suspend fun trackPackage(code: String, forceRefresh: Boolean = false, carrier: String = "Auto"): TrackingResponse? {
         val cleanCode = code.trim().uppercase()
 
         if (!forceRefresh) {
@@ -48,14 +48,26 @@ class TrackingRepository(private val context: Context) {
 
         Log.d("TRACKING", "Baixando da internet: $cleanCode")
 
-        val result = when {
-            listOf("MZ", "LJ", "LOG").any { cleanCode.startsWith(it) } -> { trackViaLoggi(cleanCode) }
-            listOf("NN", "LP").any { cleanCode.startsWith(it) } -> { trackCainiaoFree(cleanCode) }
-            listOf("ME").any { cleanCode.startsWith(it) } -> { trackMelhorRastreioFree(cleanCode) }
-            listOf("AJ").any { cleanCode.startsWith(it) } -> { trackViaAnjun(cleanCode) }
-            listOf("BR", "SPX").any { cleanCode.startsWith(it) } -> { trackViaSpxWebView(cleanCode) }
-            listOf("AD", "AB", "AN").any { cleanCode.startsWith(it) } -> { trackViaLinketrackWebView(cleanCode) }
-            else -> { null }
+        val result = when (carrier) {
+            "Correios" -> trackViaLinketrackWebView(cleanCode)
+            "Loggi" -> trackViaLoggi(cleanCode)
+            "Shopee" -> trackViaSpxWebView(cleanCode)
+            "AliExpress" -> trackCainiaoFree(cleanCode)
+            "Shein" -> trackViaAnjun(cleanCode)
+            "Melhor Envio" -> trackMelhorRastreioFree(cleanCode)
+            "Total Express" -> trackViaTotalExpress(cleanCode)
+            else -> {
+                when {
+                    listOf("MZ", "LJ", "LOG").any { cleanCode.startsWith(it) } -> { trackViaLoggi(cleanCode) }
+                    listOf("NN", "LP").any { cleanCode.startsWith(it) } -> { trackCainiaoFree(cleanCode) }
+                    listOf("ME").any { cleanCode.startsWith(it) } -> { trackMelhorRastreioFree(cleanCode) }
+                    listOf("AJ").any { cleanCode.startsWith(it) } -> { trackViaAnjun(cleanCode) }
+                    listOf("BR", "SPX").any { cleanCode.startsWith(it) } -> { trackViaSpxWebView(cleanCode) }
+                    listOf("TX").any { cleanCode.startsWith(it) } || listOf("TX").any { cleanCode.endsWith(it) } -> { trackViaTotalExpress(cleanCode) }
+                    listOf("AD", "AB", "AN").any { cleanCode.startsWith(it) } -> { trackViaLinketrackWebView(cleanCode) }
+                    else -> { null }
+                }
+            }
         }
 
         if (result != null && !result.events.isNullOrEmpty()) {
@@ -63,6 +75,77 @@ class TrackingRepository(private val context: Context) {
         }
 
         return result
+    }
+
+    private suspend fun trackViaTotalExpress(code: String): TrackingResponse? {
+        return withContext(Dispatchers.IO) {
+            try {
+                val url = "https://totalconecta.totalexpress.com.br/mfe-rastreio/api/order-data?awb=$code&language=pt"
+                val request = Request.Builder()
+                    .url(url)
+                    .addHeader("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36")
+                    .addHeader("Accept", "application/json, text/plain, */*")
+                    .addHeader("Accept-Language", "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7")
+                    .addHeader("Sec-Ch-Ua", "\"Chromium\";v=\"122\", \"Not(A:Brand\";v=\"24\", \"Google Chrome\";v=\"122\"")
+                    .addHeader("Sec-Ch-Ua-Mobile", "?0")
+                    .addHeader("Sec-Ch-Ua-Platform", "\"Windows\"")
+                    .addHeader("Sec-Fetch-Dest", "empty")
+                    .addHeader("Sec-Fetch-Mode", "cors")
+                    .addHeader("Sec-Fetch-Site", "same-site")
+                    .addHeader("Referer", "https://totalconecta.totalexpress.com.br/mfe-rastreio/")
+                    .build()
+                val response = client.newCall(request).execute()
+                val body = response.body?.string()
+                if (!response.isSuccessful) {
+                    return@withContext null
+                }
+                if (body.isNullOrBlank()) {
+                    return@withContext null
+                }
+                val rawData = gson.fromJson(body, TotalExpressResponse::class.java)
+                val layouts = rawData.data?.layouts
+                if (layouts.isNullOrEmpty()) {
+                    return@withContext null
+                }
+                val events = mutableListOf<TrackingEvent>()
+
+                layouts.forEach { layout ->
+                    layout.etapas?.forEach { etapa ->
+                        etapa.listaStatus?.forEach { status ->
+                            val dateParts = status.data?.split("-")
+                            val formattedDate = if (dateParts != null && dateParts.size == 3) {
+                                "${dateParts[2]}/${dateParts[1]}/${dateParts[0]}"
+                            } else {
+                                status.data ?: ""
+                            }
+
+                            events.add(
+                                TrackingEvent(
+                                    status = status.statusDescricao ?: "Atualização",
+                                    date = formattedDate,
+                                    time = status.hora ?: "",
+                                    location = status.mensagemEvaTraducao?.mensagemEva ?: "Total Express",
+                                    subStatus = null
+                                )
+                            )
+                        }
+                    }
+                }
+
+                if (events.isEmpty()) {
+                    Log.e("TOTAL_EXPRESS", "Eventos vazios após mapeamento.")
+                    return@withContext null
+                }
+
+                Log.d("TOTAL_EXPRESS", "Sucesso! Foram mapeados ${events.size} eventos.")
+                return@withContext TrackingResponse(tracking_code = code, events = events.reversed())
+
+            } catch (e: Exception) {
+                Log.e("TOTAL_EXPRESS", "Erro fatal no rastreio: ${e.message}")
+                e.printStackTrace()
+                null
+            }
+        }
     }
 
     private suspend fun trackViaLinketrackWebView(code: String): TrackingResponse? {
