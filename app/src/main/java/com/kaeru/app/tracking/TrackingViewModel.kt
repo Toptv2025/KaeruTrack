@@ -172,11 +172,11 @@ class TrackingViewModel(
         prefs.edit().putString("default_filter", filter.name).apply()
     }
     private var searchJob: Job? = null
-    fun trackPackage(code: String) {
+    fun trackPackage(code: String, carrier: String = "Auto") {
         searchJob?.cancel()
         errorMessage = null
         trackingResult = null
-        if (!repository.isCarrierSupported(code)) {
+        if (carrier == "Auto" && !repository.isCarrierSupported(code)) {
             isLoading = false
             return
         }
@@ -206,7 +206,7 @@ class TrackingViewModel(
                 isLoading = false
                 return@launch
             }
-            val response = repository.trackPackage(code, forceRefresh = true)
+            val response = repository.trackPackage(code, forceRefresh = true, carrier = carrier)
             if (response != null) {
                 trackingResult = response
                 updateHistoryStatusIfExists(code, response)

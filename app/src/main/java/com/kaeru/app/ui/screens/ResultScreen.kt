@@ -48,6 +48,7 @@ val SoftRed = Color(0xFFEF5350)
 @Composable
 fun ResultScreen(
     trackingCode: String,
+    carrier: String,
     viewModel: TrackingViewModel,
     onBack: () -> Unit
 ) {
@@ -65,7 +66,7 @@ fun ResultScreen(
 
     LaunchedEffect(trackingCode) {
         if (viewModel.trackingResult?.tracking_code != trackingCode) {
-            viewModel.trackPackage(trackingCode)
+            viewModel.trackPackage(trackingCode, carrier = carrier)
         }
     }
 
