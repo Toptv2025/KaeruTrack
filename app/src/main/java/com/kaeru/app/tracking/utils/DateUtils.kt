@@ -70,14 +70,15 @@ object DateUtils {
     }
     fun calculateDays(lastDateStr: String?, firstDateStr: String?, savedAt: Long, isDelivered: Boolean): String {
         return try {
-            val dataInicial = parseToLocalDate(firstDateStr) ?: Instant.ofEpochMilli(savedAt).atZone(ZoneId.systemDefault()).toLocalDate()
-            val dataFinal = if (isDelivered) {
-                parseToLocalDate(lastDateStr) ?: LocalDate.now()
+            if (isDelivered) {
+                val dataEntrega = parseToLocalDate(lastDateStr) ?: LocalDate.now()
+                val dias = kotlin.math.abs(ChronoUnit.DAYS.between(dataEntrega, LocalDate.now()))
+                dias.toString()
             } else {
-                LocalDate.now()
+                val dataInicial = parseToLocalDate(firstDateStr) ?: Instant.ofEpochMilli(savedAt).atZone(ZoneId.systemDefault()).toLocalDate()
+                val dias = kotlin.math.abs(ChronoUnit.DAYS.between(dataInicial, LocalDate.now()))
+                dias.toString()
             }
-            val dias = kotlin.math.abs(ChronoUnit.DAYS.between(dataInicial, dataFinal))
-            dias.toString()
         } catch (e: Exception) {
             "--"
         }
