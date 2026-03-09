@@ -1,0 +1,84 @@
+
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+  <meta charset="UTF-8">
+  <title>TV Műsorfigyelő</title>
+  <style>
+    body { font-family: Arial, sans-serif; background: #f0f0f0; padding: 20px; }
+    .logo {
+      text-align: center;
+      margin-bottom: 10px;
+    }
+    .clock {
+      text-align: center;
+      font-size: 1.2em;
+      color: #555;
+      margin-bottom: 20px;
+    }
+    .link-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 20px;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+    .card {
+      background-color: #007BFF;
+      border-radius: 10px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      transition: 0.3s;
+    }
+    .card:hover {
+      background-color: #0056b3;
+    }
+    .card a {
+      display: block;
+      color: white;
+      text-decoration: none;
+      padding: 20px;
+      font-weight: bold;
+      text-align: center;
+    }
+  </style>
+  <script>
+    function updateClock() {
+      const now = new Date();
+      const options = { year: 'numeric', month: 'long', day: 'numeric' };
+      const dateStr = now.toLocaleDateString('hu-HU', options);
+      const timeStr = now.toLocaleTimeString('hu-HU');
+      document.getElementById("clock").innerText = dateStr + " ⏰ " + timeStr;
+    }
+    setInterval(updateClock, 1000);
+    window.onload = updateClock;
+  </script>
+</head>
+<body>
+  <div class="logo">
+    <a href="https://bespoke-pothos-1c87e6.netlify.app/" target="_blank">
+      <img src="tvmusor_logo.png" alt="TV Műsor Logo" style="width: 120px;">
+    </a>
+  </div>
+  <div class="clock" id="clock">Betöltés...</div>
+  <div class="link-list">
+    <div class="card"><a href="https://musor.tv/most/tvben" target="_blank">musor.tv – Most a TV-ben</a></div>
+    <div class="card"><a href="https://www.tvmustra.hu/" target="_blank">TVMustra – Teljes műsor</a></div>
+    <div class="card"><a href="https://www.tvmusor.hu/most/" target="_blank">TVMusor.hu – Most megy</a></div>
+    <div class="card"><a href="https://tvprofil.com/hu/" target="_blank">TVProfil – Magyar</a></div>
+    <div class="card"><a href="https://tvprofil.com/rs/" target="_blank">TVProfil – Szerb</a></div>
+    <div class="card"><a href="https://tvprofil.com/de/" target="_blank">TVProfil – Német</a></div>
+    <div class="card"><a href="https://tvprofil.com/hr/" target="_blank">TVProfil – Horvát</a></div>
+    <div class="card"><a href="https://tvprofil.com/bg/" target="_blank">TVProfil – Bolgár</a></div>
+    <div class="card"><a href="https://www.parabola.cz/tv-program/" target="_blank">Parabola.cz – Műholdas műsor</a></div>
+    <div class="card"><a href="https://tv-programme.telecablesat.fr/programmes-tele/francia" target="_blank">TéléCâbleSat – Francia TV-műsor</a></div>
+    <div class="card"><a href="https://www.tvguide.com/listings/" target="_blank">TV Guide – USA</a></div>
+    <div class="card"><a href="https://tvlistings.zap2it.com/" target="_blank">Zap2It – USA</a></div>
+    <div class="card"><a href="https://www.radiotimes.com/tv/tv-listings/" target="_blank">Radio Times – UK</a></div>
+    <div class="card"><a href="https://tvplayer.com/watch/" target="_blank">TVPlayer – UK</a></div>
+    <div class="card"><a href="https://www.superguidatv.it/" target="_blank">SuperGuidaTV – Olasz</a></div>
+    <div class="card"><a href="https://www.staseraintv.com/" target="_blank">Stasera in TV – Olasz</a></div>
+    <div class="card"><a href="https://www.formulatv.com/programacion/" target="_blank">FormulaTV – Spanyol</a></div>
+    <div class="card"><a href="https://www.elmundo.es/television/programacion-tv/" target="_blank">El Mundo – Spanyol műsor</a></div>
+  </div>
+</body>
+</html>
